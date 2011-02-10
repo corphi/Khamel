@@ -1,17 +1,18 @@
 <?php
 
 /**
- * Eine Warteschlange für mittels Khamel zu verarbeitende Zeilen.
+ * A queue of lines for processing with Khamel.
+ * Somehow inspired by Java iterators.
  */
 class KhamelQueue
 {
 	/**
-	 * Die Zeilen.
+	 * The lines.
 	 * @var array
 	 */
 	protected $arr;
 	/**
-	 * Konstruktor; erstellt eine neue Warteschlange aus dem Array.
+	 * Constructor; creates a new queue from an array.
 	 * @param array $arr
 	 */
 	public function __construct(array $arr)
@@ -20,7 +21,7 @@ class KhamelQueue
 	}
 
 	/**
-	 * Ob es eine weitere Zeile gibt.
+	 * Whether there are further lines.
 	 * @return bool
 	 */
 	public function has_next()
@@ -29,12 +30,12 @@ class KhamelQueue
 	}
 
 	/**
-	 * Die Zeile.
+	 * The current line.
 	 * @var string
 	 */
 	protected $line;
 	/**
-	 * Liefert die aktuelle Zeile zurück. Kann so tun, als wäre ein bestimmter Einzug vorgegeben.
+	 * Returns the current line. Can fake a specified input indent.
 	 * @param int $forced_input_indent
 	 * @return string
 	 */
@@ -51,12 +52,12 @@ class KhamelQueue
 		return Khamel::spaces($this->indent - $forced_input_indent) . $this->line;
 	}
 	/**
-	 * Der Einzug.
+	 * The current line’s indent.
 	 * @var int
 	 */
 	protected $indent;
 	/**
-	 * Liefert den Einzug der aktuellen Zeile zurück.
+	 * Returns the current line’s indent.
 	 * @return int
 	 */
 	public function get_indent()
@@ -65,8 +66,8 @@ class KhamelQueue
 	}
 
 	/**
-	 * Arbeitet die nächste Zeile ab.
-	 * Vorher überprüfen, ob noch eine weitere Zeile vorhanden ist!
+	 * Processes the next line.
+	 * Always check whether there actually is a next line!
 	 * @return KhamelQueue
 	 */
 	public function move_next()
@@ -88,23 +89,23 @@ class KhamelQueue
 }
 
 /**
- * 
+ * Base class for nodes.
  */
 abstract class AbstractNode
 {
 	/**
-	 * Ob dieser Knoten inline dargestellt wird.
+	 * Whether this node should be displayed inline (used for line breaking purposes).
 	 * @var bool
 	 */
 	protected $is_inline;
 
 	/**
-	 * Einzug der Ausgabe.
+	 * Output indent for this node.
 	 * @var int
 	 */
 	protected $output_indent;
 	/**
-	 * Konstruktor; speichert den Ausgabeeinzug (zur Verwendung in __toString).
+	 * Constructor; only saves the output indent (for use in __toString).
 	 * @param int $output_indent
 	 */
 	protected function __construct($output_indent)
@@ -113,13 +114,13 @@ abstract class AbstractNode
 	}
 
 	/**
-	 * Enthält alle Kindknoten.
+	 * Holds all child nodes.
 	 * @var array
 	 */
 	protected $children;
 
 	/**
-	 * Parst alle Unterknoten und fügt sie hinzu.
+	 * Parses all child nodes an adds them to the list.
 	 * @param KhamelQueue $q
 	 * @param int $output_indent
 	 * @return void
@@ -169,75 +170,75 @@ abstract class AbstractNode
 	}
 
 	/**
-	 * Ob sämtliche Kindelemente inline sind.
+	 * Whether all child nodes are inline.
 	 * @return bool
 	 */
 	protected function has_only_inline_children()
 	{
-		$kinder_inline = true;
+		$children_inline = true;
 		if (isset($this->children))
 		{
-			foreach ($this->children as $kind)
+			foreach ($this->children as $child)
 			{
-				$kinder_inline = $kind->is_inline;
-				if (!$kinder_inline)
+				$children_inline = $child->is_inline;
+				if (!$children_inline)
 				{
 					break;
 				}
 			}
 		}
-		return $kinder_inline;
+		return $children_inline;
 	}
 
 	/**
-	 * Verpackt die Kindelemente in einen String.
+	 * Packages all child nodes into a string
 	 * @return string
 	 */
 	protected function stringify_children()
 	{
-		$ausgabe = '';
+		$output = '';
 
 		if (!$this->children)
 		{
-			return $ausgabe;
+			return $output;
 		}
 
-		$voriger_inline = $this->has_only_inline_children(); // Am Anfang einen Zeilenumbruch einfügen lassen, wenn es auch Block-Kinder gibt.
-		$einzug = Khamel::spaces($this->output_indent + 1);
-		$kind = reset($this->children);
+		$previous_inline = $this->has_only_inline_children(); // Only insert a line break at the beginning if it also has block children
+		$indent = Khamel::spaces($this->output_indent + 1);
+		$child = reset($this->children);
 		do
 		{
-			if ($kind->is_inline && $voriger_inline) // Inline-Elemente direkt aneinanderhängen
+			if ($child->is_inline && $previous_inline) // Directly concatenate inline elements
 			{
-				$ausgabe .= $kind;
+				$output .= $child;
 			}
-			else // Vor, nach und zwischen Blöcken einen Zeilenumbruch einfügen
+			else // Insert a line break before, after and between blocks
 			{
-				$ausgabe .= Khamel::NEWLINE . $einzug . $kind;
+				$output .= Khamel::NEWLINE . $indent . $child;
 			}
-			$voriger_inline = $kind->is_inline;
+			$previous_inline = $child->is_inline;
 		}
-		while ($kind = next($this->children));
+		while ($child = next($this->children));
 
-		return $ausgabe;
+		return $output;
 	}
 
 	public abstract function __toString();
 }
 
 /**
- * Textknoten. TODO: Macht auch Auswertungen.
+ * Simple text node. TODO: Can do evaluations as well.
  */
 class TextNode extends AbstractNode
 {
 	/**
-	 * Auszugebender Text.
+	 * Output text.
 	 * @var string
 	 */
 	protected $string;
 
 	/**
-	 * Konstruktor; parst einen Textknoten aus der Warteschlange.
+	 * Constructor; parses a text node from the queue.
 	 * @param KhamelQueue $q
 	 * @param int $output_indent
 	 */
@@ -258,23 +259,23 @@ class TextNode extends AbstractNode
 			return print_r($this->string, 1) . ':' . $this->string;
 		}
 		return $this->string;
-		'<?php echo htmlspecialchars(' . ltrim(substr($zeile, 1)) . '); ?>';
+		'<?php echo htmlspecialchars(' . ltrim(substr($this->string, 1)) . '); ?>';
 	}
 }
 
 /**
- * Bildet einen XHTML-Knoten ab.
+ * An XHTML node.
  */
 class HtmlNode extends AbstractNode
 {
 	/**
-	 * Ob dieses HTML-Element inhaltsleer ist.
+	 * Whether this element is empty.
 	 * @var bool
 	 */
 	protected $is_empty;
 
 	/**
-	 * Konstruktor; parst einen neuen XHTML-Knoten.
+	 * Constructor; parses an XHTML node from the queue.
 	 * @param KhamelQueue $q
 	 * @param int $output_indent
 	 */
@@ -282,59 +283,59 @@ class HtmlNode extends AbstractNode
 	{
 		parent::__construct($output_indent);
 
-		if (!preg_match('@^(\.[^() =%#]+)?(#[^() =%]+)?(\%[^() =]+)?(\([^()]+\))? *(=?.+)?$@', $q->get_line(), $treffer))
+		if (!preg_match('@^(\.[^() =%#]+)?(#[^() =%]+)?(\%[^() =]+)?(\([^()]+\))? *(=?.+)?$@', $q->get_line(), $matches))
 		{
 			die('Parsen gescheitert: ' . htmlspecialchars($q->get_line()));
 		}
 
 		$tag = 'div';
-		if (isset($treffer[1]) && $treffer[1]) // CSS-Klassen
+		if (isset($matches[1]) && $matches[1]) // CSS classes
 		{
-			$class = htmlspecialchars(str_replace('.', ' ', substr($treffer[1], 1))) . '"';
+			$class = htmlspecialchars(str_replace('.', ' ', substr($matches[1], 1))) . '"';
 		}
-		if (isset($treffer[2]) && $treffer[2]) // Bezeichner
+		if (isset($matches[2]) && $matches[2]) // Identifier
 		{
-			$id = '"' . htmlspecialchars(substr($treffer[2], 1)) . '"';
+			$id = '"' . htmlspecialchars(substr($matches[2], 1)) . '"';
 		}
-		if (isset($treffer[3]) && $treffer[3]) // Tag
+		if (isset($matches[3]) && $matches[3]) // Tag
 		{
-			$tag = substr($treffer[3], 1);
+			$tag = substr($matches[3], 1);
 		}
 
-		if (isset($treffer[5]) && $treffer[5]) // Erstgeborenes
+		if (isset($matches[5]) && $matches[5]) // First child
 		{
-			$qq = new KhamelQueue(array($treffer[5]));
+			$qq = new KhamelQueue(array($matches[5]));
 			$this->children[] = new TextNode($qq->move_next(), $output_indent + 1);
 		}
 
-		if (isset($treffer[4])) // Attribute
+		if (isset($matches[4])) // Attributes
 		{
-			$muh = substr($treffer[4], 1, -1); // Umgebende Klammern entfernen
-			while (preg_match('@^([^ =]+)(=("[^"]*"|[^"][^ ]*))?([ ]+|$)@', $muh, $treffer))
+			$moo = substr($matches[4], 1, -1); // Remove surrounding parentheses
+			while (preg_match('@^([^ =]+)(=("[^"]*"|[^"][^ ]*))?([ ]+|$)@', $moo, $matches))
 			{
-				$ding = $treffer[1];
-				if (!$treffer[2]) // Leeres Attribut
+				$foo = $matches[1];
+				if (!$matches[2]) // Empty attribute
 				{
-					$attr[$ding] = $ding;
+					$attr[$foo] = $foo;
 				}
-				else if ($treffer[3][0] == '"') // Attribut mit Wert
+				else if ($matches[3][0] == '"') // Attribute with value
 				{
-					$attr[$ding] = $treffer[3];
+					$attr[$foo] = $matches[3];
 				}
-				else // Attribut mit Auswertung
+				else // Attribute with evaluation
 				{
-					$attr[$ding] = '"<?php echo htmlspecialchars(' . ltrim($treffer[3]) . '); ?>"';
+					$attr[$foo] = '"<?php echo htmlspecialchars(' . ltrim($matches[3]) . '); ?>"';
 				}
-				$muh = substr($muh, strlen($treffer[0])); // Geparstes Attribut abschneiden
+				$moo = substr($moo, strlen($matches[0])); // Move to next attribute
 			}
 		}
 
-		if (isset($id)) // Bezeichner überschreiben
+		if (isset($id)) // Overwrite identifier
 		{
 			$attr['id'] = $id;
 			unset($id);
 		}
-		if (isset($class)) // CSS-Klassen ergänzen
+		if (isset($class)) // Append CSS classes
 		{
 			$attr['class'] = isset($attr['class']) ? substr($attr['class'], 0, -1) . ' ' . $class : '"' . $class;
 			unset($class);
@@ -343,7 +344,7 @@ class HtmlNode extends AbstractNode
 		$this->parse_children($q, $output_indent + 1, $q->get_indent() + 1);
 		$this->is_inline = Khamel::is_inline_element($tag);
 
-		// Attribute zusammensetzen
+		// Concatenate attributes
 		if (isset($attr))
 			{
 			foreach ($attr as $k => $v)
@@ -355,7 +356,7 @@ class HtmlNode extends AbstractNode
 	}
 
 	/**
-	 * Das öffnende Tag
+	 * The opening tag.
 	 * @var string
 	 */
 	private $tag;
@@ -365,26 +366,26 @@ class HtmlNode extends AbstractNode
 		$tag = $this->tag;
 		unset($this->tag);
 
-		$ausgabe = "<$tag";
-		preg_match('@^[^ ]+@', $tag, $treffer);
-		$tag = $treffer[0];
+		$output = "<$tag";
+		preg_match('@^[^ ]+@', $tag, $matches);
+		$tag = $matches[0];
 
 		if (Khamel::is_empty_element($tag))
 		{
-			return "$ausgabe />";
+			return "$output />";
 		}
-		$ausgabe .= '>' . $this->stringify_children();
+		$output .= '>' . $this->stringify_children();
 
 		if ($this->has_only_inline_children())
 		{
-			return "$ausgabe</$tag>";
+			return "$output</$tag>";
 		}
-		return $ausgabe . Khamel::NEWLINE . Khamel::spaces($this->output_indent) . "</$tag>";
+		return $output . Khamel::NEWLINE . Khamel::spaces($this->output_indent) . "</$tag>";
 	}
 }
 
 /**
- * Stellt einen PHP-Knoten dar.
+ * A PHP node.
  */
 class PhpNode extends AbstractNode
 {
@@ -397,9 +398,9 @@ class PhpNode extends AbstractNode
 	{
 		parent::__construct($output_indent);
 
-		$zeile = $q->get_line();
+		$line = $q->get_line();
 
-/*		switch (substr($zeile, 0, strpos($zeile, array(' ', '('))))
+/*		switch (substr($line, 0, strpos($zeile, array(' ', '('))))
 		{
 			case 'if':
 			case 'else':
@@ -408,20 +409,20 @@ class PhpNode extends AbstractNode
 			case 'foreach':
 			case 'elseif':
 			case 'switch':
-				$zeile .= ':'; // FIXME: Nur anhängen, wenn es noch nicht da ist.
+				$zeile .= ':'; // FIXME: Only add it if it’s not there.
 				break;
 
 			default:
-				$zeile .= ';'; // FIXME: Ebenso.
+				$zeile .= ';'; // FIXME: Same thing.
 		}*/
 
 		$this->parse_children($q, $output_indent, $q->get_indent() + 1);
 
-		$zeile = substr($zeile, 1);
+		$zeile = ltrim(substr($zeile, 1));
 
 		if ($zeile[0] == '#' || substr($zeile, 0, 2) == '//')
 		{
-			// Nichts ausgeben
+			// Don’t output anything.
 			$this->children = array();
 			$this->code = '';
 			return;
@@ -431,7 +432,7 @@ class PhpNode extends AbstractNode
 	}
 
 	/**
-	 * Die Ausgabe.
+	 * The output.
 	 * @var string
 	 */
 	private $code;
@@ -443,12 +444,12 @@ class PhpNode extends AbstractNode
 }
 
 /**
- * Ein Kommentar, kann auch Conditional Comments.
+ * A comment. Can do conditional ones too,
  */
 class CommentNode extends AbstractNode
 {
 	/**
-	 * Konstruktor; 
+	 * Constructor; 
 	 * @param KhamelQueue $q
 	 * @param int $output_indent
 	 * @param int $input_indent
@@ -472,7 +473,7 @@ class CommentNode extends AbstractNode
 class DoctypeNode extends AbstractNode
 {
 	/**
-	 * Konstruktor; erstellt einen neuen Doctype für XHTML 1.1.
+	 * Constructor; creates a new doctype for XHTML 1.1.
 	 * @param KhamelQueue $q
 	 * @param int $output_indent
 	 */
@@ -489,12 +490,12 @@ class DoctypeNode extends AbstractNode
 }
 
 /**
- * Ein Knoten mit dem Eingabe-Einzug 0.
+ * A node with input indent 0.
  */
 class RootNode extends AbstractNode
 {
 	/**
-	 * Erstellt einen neuen Knoten ohne eigene Ausgabe. Er gibt nur seine Kindknoten aus.
+	 * Creates a new node that will only output its children.
 	 * @param KhamelQueue $q
 	 * @param int $output_indent
 	 */
@@ -512,7 +513,7 @@ class RootNode extends AbstractNode
 }
 
 /**
- * Khamel parst eine Untermenge der HAML-Befehle und cacht das Ergebnis.
+ * Khamel parses a subset of the HAML commands and caches the result.
  * Ab PHP 5.
  */
 class Khamel extends RootNode
@@ -520,7 +521,7 @@ class Khamel extends RootNode
 	public static $template_path, $cache_path;
 
 	/**
-	 * Der Dateiname des geparsten Templates.
+	 * Input filename.
 	 * @var string
 	 */
 	protected $file;
@@ -547,15 +548,15 @@ class Khamel extends RootNode
 	}
 
 	/**
-	 * Ein Zeilenumbruch.
+	 * A line break.
 	 * @var string
 	 */
 	const NEWLINE = '
 ';
 
 	/**
-	 * Generiert entsprechend viele Leerzeichen hintereinander.
-	 * @param int $anzahl
+	 * Generates the specified amount of spaces.
+	 * @param int $number
 	 * @return string
 	 */
 	public static function spaces($number)
@@ -570,10 +571,10 @@ class Khamel extends RootNode
 	}
 
 	/**
-	 * 
+	 * Returns an instance of the requested helper class.
 	 * @param string $name
 	 */
-	public static function get_helper($name)
+	public static function create_helper($name)
 	{
 		switch ($name)
 		{
@@ -591,12 +592,12 @@ class Khamel extends RootNode
 			return self::$custom[$name];
 		}
 
-		// TODO: Fehlerfall behandeln
+		// TODO: Process errors
 	}
 
 
 	/**
-	 * Erstellt ein neues Khamel-Objekt, in dem die übergebene Datei geparst wird.
+	 * Constructor; creates a new Khamel object by parsing a file.
 	 * @param string $filename
 	 */
 	public function __construct($filename)
@@ -612,9 +613,10 @@ class Khamel extends RootNode
 		$filename = self::$cache_path . '/' . substr(md5($this->file . filemtime($this->file)), 0, 10) . '.php';
 		if (!file_put_contents($filename, parent::__toString()))
 		{
-			return 'Konnte nicht puffern.';
+			return 'Buffering failed.';
 		}
 
+		// TODO: Import variables
 		ob_start(null);
 		include $filename;
 		$ausgabe = ob_get_contents();

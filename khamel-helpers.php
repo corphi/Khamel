@@ -16,7 +16,7 @@ class CacheHelper extends AbstractNode
  */
 class IncludeHelper extends RootNode
 {
-	public function __construct(KhamelQueue $Q, $output_indent, $input_indent)
+	public function __construct(KhamelQueue $q, $output_indent, $input_indent)
 	{
 		$filename = substr($q->get_line(), 9);
 		$qq = new KhamelQueue(file($filename, Khamel::$template_path . "/$filename.haml", FILE_IGNORE_NEW_LINES));
