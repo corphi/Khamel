@@ -88,7 +88,7 @@ class JavascriptHelper extends DumbNode
 		{
 			return '';
 		}
-		return '<script type="text/javascript">' . Khamel::NEWLINE . '// <![CDATA[' . $this->output . '// ]]>' . Khamel::NEWLINE . '</script>';
+		return '<script type="text/javascript">' . Khamel::NEWLINE . '// <![CDATA[' . $this->output . '// ]]>' . Khamel::NEWLINE . Khamel::spaces($this->output_indent) . '</script>';
 	}
 }
 
@@ -96,15 +96,15 @@ class JavascriptHelper extends DumbNode
  * Wraps content into a <style> element and escapes properly.
  * TODO: Allow attributes on <style> tag.
  */
-class CssHelper extends WrapperNode
+class CssHelper extends DumbNode
 {
 	public function __toString()
 	{
-		if ($this->output != Khamel::NEWLINE)
+		if ($this->output == Khamel::NEWLINE)
 		{
 			return '';
 		}
-		return '<style type="text/css">' . Khamel::NEWLINE . '/* <![CDATA[ */' . $this->output . '/* ]]> */' . Khamel::NEWLINE . '</style>';
+		return '<style type="text/css">' . Khamel::NEWLINE . '/* <![CDATA[ */' . $this->output . '/* ]]> */' . Khamel::NEWLINE . Khamel::spaces($this->output_indent) . '</style>';
 	}
 }
 

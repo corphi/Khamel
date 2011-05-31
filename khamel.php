@@ -372,7 +372,7 @@ class PhpNode extends IntelligentNode
 	 * @param KhamelQueue $q
 	 * @param int $output_indent
 	 */
-	public function __construct(KhamelQueue $q, $output_indent, $min_input_indent)
+	public function __construct(KhamelQueue $q, $output_indent)
 	{
 		$line = $q->get_line();
 		parent::__construct($q, $output_indent, $q->get_indent() + 1);
