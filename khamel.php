@@ -368,7 +368,7 @@ class HtmlNode extends AbstractNode
 class PhpNode extends AbstractNode
 {
 	/**
-	 * Konstruktor; erstellt einen neuen PHP-Knoten, indem er ihn aus dem Array parst.
+	 * Constructor; creates a new PHP node.
 	 * @param KhamelQueue $q
 	 * @param int $output_indent
 	 */
@@ -422,7 +422,7 @@ class PhpNode extends AbstractNode
 }
 
 /**
- * A comment. Can do conditional ones too,
+ * A comment. TODO: Can do conditional ones too,
  */
 class CommentNode extends AbstractNode
 {
@@ -446,7 +446,7 @@ class CommentNode extends AbstractNode
 }
 
 /**
- *
+ * A !DOCTYPE declaration, only supports XHTML 1.1 for now.
  */
 class DoctypeNode extends AbstractNode
 {
@@ -505,7 +505,7 @@ class Khamel extends RootNode
 	protected $file;
 
 	/**
-	 * Whether such HTML elements are empty.
+	 * Whether the given HTML element is self-closing.
 	 * @param string $tag
 	 * @return bool
 	 */
@@ -515,7 +515,7 @@ class Khamel extends RootNode
 		return in_array($tag, $empty_elements);
 	}
 	/**
-	 * Whether such HTML elemtents are inline.
+	 * Whether the given HTML element is inline.
 	 * @param string $tag
 	 * @return bool
 	 */
