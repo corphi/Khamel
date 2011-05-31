@@ -1,32 +1,39 @@
 <?php
 
 /**
- * 
+ *
  */
 class CacheHelper extends AbstractNode
 {
-	public function __construct(KhamelQueue $q, $output_indent, $input_indent)
+	public function __construct(KhamelQueue $q, $output_indent, $min_input_indent)
 	{
 		parent::__construct($output_indent);
+		$this->parse_children($q, $output_indent, $min_input_indent);
+	}
+
+	public function __toString()
+	{
+		return parent::stringify_children();
 	}
 }
 
 /**
- * 
+ *
  */
 class IncludeHelper extends RootNode
 {
-	public function __construct(KhamelQueue $q, $output_indent, $input_indent)
+	public function __construct(KhamelQueue $q, $output_indent)
 	{
-		$filename = substr($q->get_line(), 9);
-		$qq = new KhamelQueue(file($filename, Khamel::$template_path . "/$filename.haml", FILE_IGNORE_NEW_LINES));
+		$filename = substr($q->get_line(), 9); // FIXME: Allow variable file names
+		$this->file = Khamel::$template_path . "/$filename.haml";
+		$qq = new KhamelQueue($this->file);
 
 		parent::__construct($qq, $output_indent);
 	}
 }
 
 /**
- * 
+ *
  */
 class PreHelper extends AbstractNode
 {
@@ -42,11 +49,11 @@ class PreHelper extends AbstractNode
 }
 
 /**
- * 
+ *
  */
-class ScriptHelper extends AbstractNode
+class JavascriptHelper extends AbstractNode
 {
-	public function __construct(KhamelQueue $q, $output_indent, $input_indent)
+	public function __construct(KhamelQueue $q, $output_indent, $min_input_indent)
 	{
 		parent::__construct($output_indent);
 	}
@@ -58,18 +65,32 @@ class ScriptHelper extends AbstractNode
 }
 
 /**
- * 
+ *
  */
-class StyleHelper extends AbstractNode
+class CssHelper extends AbstractNode
 {
-	public function __construct(KhamelQueue $q, $output_indent, $input_indent)
+	/**
+	 * What will be the output.
+	 * @var string
+	 */
+	private $output = Khamel::NEWLINE;
+
+	public function __construct(KhamelQueue $q, $output_indent, $min_input_indent)
 	{
 		parent::__construct($output_indent);
+
+		$q->move_next();
+		while ($q->get_indent() >= $min_input_indent)
+		{
+			$this->output .= $q->get_line() . Khamel::NEWLINE;
+
+			$q->move_next();
+		}
 	}
 
 	public function __toString()
 	{
-		return '<style type="text/css">' . Khamel::NEWLINE . '/* <![CDATA[ */' . '/* ]]> */' . Khamel::NEWLINE . '</style>';
+		return '<style type="text/css">' . Khamel::NEWLINE . '/* <![CDATA[ */' . $this->output . '/* ]]> */' . Khamel::NEWLINE . '</style>';
 	}
 }
 

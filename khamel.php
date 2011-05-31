@@ -1,90 +1,28 @@
 <?php
 
+include 'khamel-queue.php';
+include 'khamel-helpers.php';
+
+
 /**
- * A queue of lines for processing with Khamel.
- * Somehow inspired by Java iterators.
+ * Wraps a string into a data URI.,
+ * @param string $string
+ * @param string $type
  */
-class KhamelQueue
+function data_uri_from_string($string, $type = 'text/plain')
 {
-	/**
-	 * The lines.
-	 * @var array
-	 */
-	protected $arr;
-	/**
-	 * Constructor; creates a new queue from an array.
-	 * @param array $arr
-	 */
-	public function __construct(array $arr)
-	{
-		$this->arr = $arr;
-	}
+	return 'data:' . $type . ',' . urlencode($string);
+}
 
-	/**
-	 * Whether there are further lines.
-	 * @return bool
-	 */
-	public function has_next()
-	{
-		return count($this->arr) > 0;
-	}
 
-	/**
-	 * The current line.
-	 * @var string
-	 */
-	protected $line;
-	/**
-	 * Returns the current line. Can fake a specified input indent.
-	 * @param int $forced_input_indent
-	 * @return string
-	 */
-	public function get_line($forced_input_indent = NULL)
+class PhpCompiler
+{
+	public static function execute($code)
 	{
-		if (is_null($forced_input_indent))
-		{
-			return $this->line;
-		}
-		if (is_null($this->indent))
-		{
-			echo "get_line() während NULL\n";
-		}
-		return Khamel::spaces($this->indent - $forced_input_indent) . $this->line;
-	}
-	/**
-	 * The current line’s indent.
-	 * @var int
-	 */
-	protected $indent;
-	/**
-	 * Returns the current line’s indent.
-	 * @return int
-	 */
-	public function get_indent()
-	{
-		return $this->indent;
-	}
+		$filename = '/tmp/' . md5($code) . '.php';
+		file_put_contents($filename, $code);
 
-	/**
-	 * Processes the next line.
-	 * Always check whether there actually is a next line!
-	 * @return KhamelQueue
-	 */
-	public function move_next()
-	{
-		$zeile = reset($this->arr);
-		if (!$zeile)
-		{
-			$this->indent = NULL;
-			$this->line = NULL;
-		}
-		else
-		{
-			$this->indent = strlen($zeile) - strlen($this->line = ltrim($zeile));
-			unset($this->arr[key($this->arr)]);
-		}
-
-		return $this;
+		include $filename;
 	}
 }
 
@@ -127,16 +65,16 @@ abstract class AbstractNode
 	 */
 	protected function parse_children(KhamelQueue $q, $output_indent, $min_input_indent)
 	{
-		if (!$q->has_next())
-		{
-			return;
-		}
-
 		$q->move_next();
 		while ($q->get_indent() >= $min_input_indent)
 		{
-			$zeile = $q->get_line();
-			switch ($zeile[0])
+			$line = $q->get_line();
+			if (is_null($line))
+			{
+				break;
+			}
+
+			switch ($line[0])
 			{
 				case '-':
 					$this->children[] = new PhpNode($q, $output_indent);
@@ -145,26 +83,21 @@ abstract class AbstractNode
 					$this->children[] = new CommentNode($q, $output_indent);
 					break;
 				case '%':
-				case '.':
 				case '#':
+				case '.':
 					$this->children[] = new HtmlNode($q, $output_indent);
 					break;
 				case ':':
-					$this->children[] = Khamel::get_helper(substr($zeile, 1), $q, $output_indent);
+					$this->children[] = Khamel::create_helper(substr($line, 1), $q, $output_indent, $min_input_indent);
 					break;
 				case '!':
-					if ($zeile == '!!! 1.1')
+					if ($line == '!!! 1.1')
 					{
 						$this->children[] = new DoctypeNode($q, $output_indent);
 						break;
 					}
 				default:
 					$this->children[] = new TextNode($q, $output_indent);
-			}
-
-			if (is_null($q->get_indent()))
-			{
-				break;
 			}
 		}
 	}
@@ -191,7 +124,7 @@ abstract class AbstractNode
 	}
 
 	/**
-	 * Packages all child nodes into a string
+	 * Packages all child nodes into a string.
 	 * @return string
 	 */
 	protected function stringify_children()
@@ -269,7 +202,7 @@ class TextNode extends AbstractNode
 class HtmlNode extends AbstractNode
 {
 	/**
-	 * Whether this element is empty.
+	 * Whether this element is self-closing.
 	 * @var bool
 	 */
 	protected $is_empty;
@@ -283,62 +216,107 @@ class HtmlNode extends AbstractNode
 	{
 		parent::__construct($output_indent);
 
-		if (!preg_match('@^(\.[^() =%#]+)?(#[^() =%]+)?(\%[^() =]+)?(\([^()]+\))? *(=?.+)?$@', $q->get_line(), $matches))
+		$line = $q->get_line();
+		if (!preg_match('@^(\%[^() =#.]+)?([#.][^() =]*)?@', $line, $matches))
 		{
-			die('Parsen gescheitert: ' . htmlspecialchars($q->get_line()));
+			die('HtmlNode::__construct(): No node in <code>' . htmlspecialchars($line) . '</code>');
 		}
 
-		$tag = 'div';
-		if (isset($matches[1]) && $matches[1]) // CSS classes
+		if (isset($matches[1]) && $matches[1]) // Tag
 		{
-			$class = htmlspecialchars(str_replace('.', ' ', substr($matches[1], 1))) . '"';
+			$tag = substr($matches[1], 1);
+			unset($matches[1]);
 		}
-		if (isset($matches[2]) && $matches[2]) // Identifier
+		else
 		{
-			$id = '"' . htmlspecialchars(substr($matches[2], 1)) . '"';
-		}
-		if (isset($matches[3]) && $matches[3]) // Tag
-		{
-			$tag = substr($matches[3], 1);
+			$tag = 'div';
 		}
 
-		if (isset($matches[5]) && $matches[5]) // First child
+		if (isset($matches[2]) && $matches[2]) // Identifier parts and/or CSS classes
 		{
-			$qq = new KhamelQueue(array($matches[5]));
-			$this->children[] = new TextNode($qq->move_next(), $output_indent + 1);
-		}
-
-		if (isset($matches[4])) // Attributes
-		{
-			$moo = substr($matches[4], 1, -1); // Remove surrounding parentheses
-			while (preg_match('@^([^ =]+)(=("[^"]*"|[^"][^ ]*))?([ ]+|$)@', $moo, $matches))
+			if (preg_match_all('@[#.][^#.]*@', $matches[2], $foo))
 			{
-				$foo = $matches[1];
-				if (!$matches[2]) // Empty attribute
+				foreach ($foo[0] as $bar) // Buffer them all
 				{
-					$attr[$foo] = $foo;
+					if ($bar[0] == '#')
+					{
+						$id[] = substr($bar, 1);
+					}
+					else
+					{
+						$class[] = substr($bar, 1);
+					}
 				}
-				else if ($matches[3][0] == '"') // Attribute with value
+			}
+			unset($foo);
+		}
+		$line = substr($line, strlen($matches[0]));
+		unset($matches);
+
+		// TODO: Object reference
+
+		while (isset($line[0]) && ($line[0] == '(' || $line[0] == '{')) // Attributes
+		{
+			if ($line[0] == '(') // HTML-style attributes
+			{
+//				echo "$line ­: found HTML-style attributes" . Khamel::NEWLINE;
+				$line = substr($line, 1);
+
+				while (preg_match('@([^=]+)=(".*?"|[^"].*?)(?: |\))@', $line, $match))
 				{
-					$attr[$foo] = $matches[3];
+					if ($match[1] == 'class' || $match[1] == 'id')
+					{
+						// Append attribute value to list
+						${$match[1]}[] = $match[2];
+					}
+					else
+					{
+						$attr[$match[1]] = $match[2];
+					}
+					$line = ltrim(substr($line, strlen($match[0])));
+
+					if (substr($match[2], -1) == ')')
+					{
+						break;
+					}
 				}
-				else // Attribute with evaluation
-				{
-					$attr[$foo] = '"<?php echo htmlspecialchars(' . ltrim($matches[3]) . '); ?>"';
-				}
-				$moo = substr($moo, strlen($matches[0])); // Move to next attribute
+				continue;
+			}
+
+			// Ruby-style attributes
+			while (preg_match('@(?:""|\'\'|:)\s*=>\s*()@', $line, $match))
+			{
+
 			}
 		}
 
-		if (isset($id)) // Overwrite identifier
+
+		if (isset($matches[5]) && $matches[5]) // First child
 		{
-			$attr['id'] = $id;
+			$qq = new KhamelQueue(data_uri_from_string($matches[5]));
+			$this->children[] = new TextNode($qq->move_next(), $output_indent + 1);
+		}
+
+		if (isset($id)) // Merge identifier
+		{
+			if (isset($attr['id']))
+			{
+				$attr['id'] = $id + $attr['id'];
+			}
 			unset($id);
 		}
-		if (isset($class)) // Append CSS classes
+		if (isset($attr['id']))
 		{
-			$attr['class'] = isset($attr['class']) ? substr($attr['class'], 0, -1) . ' ' . $class : '"' . $class;
+			$attr['id'] = implode('_', array_filter(array_flatten($attr['id'])));
+		}
+		if (isset($class)) // Merge CSS classes
+		{
+			$attr['class'] = (isset($attr['class']) ? substr($attr['class'], 0, -1) . ' ' : '"') . implode(' ', $class) . '"';
 			unset($class);
+		}
+		else if (isset($attr['class']))
+		{
+			$attr['class'] = '"' . implode(' ', $attr['class']) . '"';
 		}
 
 		$this->parse_children($q, $output_indent + 1, $q->get_indent() + 1);
@@ -346,7 +324,7 @@ class HtmlNode extends AbstractNode
 
 		// Concatenate attributes
 		if (isset($attr))
-			{
+		{
 			foreach ($attr as $k => $v)
 			{
 				$tag .= " $k=$v";
@@ -409,18 +387,18 @@ class PhpNode extends AbstractNode
 			case 'foreach':
 			case 'elseif':
 			case 'switch':
-				$zeile .= ':'; // FIXME: Only add it if it’s not there.
+				$line .= ':'; // FIXME: Only add it if it’s not there.
 				break;
 
 			default:
-				$zeile .= ';'; // FIXME: Same thing.
+				$line .= ';'; // FIXME: Same thing.
 		}*/
 
 		$this->parse_children($q, $output_indent, $q->get_indent() + 1);
 
-		$zeile = ltrim(substr($zeile, 1));
+		$line = ltrim(substr($line, 1));
 
-		if ($zeile[0] == '#' || substr($zeile, 0, 2) == '//')
+		if ($line[0] == '#' || substr($line, 0, 2) == '//')
 		{
 			// Don’t output anything.
 			$this->children = array();
@@ -428,7 +406,7 @@ class PhpNode extends AbstractNode
 			return;
 		}
 
-		$this->code = "<?php $zeile ?>";
+		$this->code = "<?php $line ?>";
 	}
 
 	/**
@@ -449,7 +427,7 @@ class PhpNode extends AbstractNode
 class CommentNode extends AbstractNode
 {
 	/**
-	 * Constructor; 
+	 * Constructor;
 	 * @param KhamelQueue $q
 	 * @param int $output_indent
 	 * @param int $input_indent
@@ -468,7 +446,7 @@ class CommentNode extends AbstractNode
 }
 
 /**
- * 
+ *
  */
 class DoctypeNode extends AbstractNode
 {
@@ -490,7 +468,7 @@ class DoctypeNode extends AbstractNode
 }
 
 /**
- * A node with input indent 0.
+ * A node with an input indent of 0.
  */
 class RootNode extends AbstractNode
 {
@@ -514,7 +492,7 @@ class RootNode extends AbstractNode
 
 /**
  * Khamel parses a subset of the HAML commands and caches the result.
- * Ab PHP 5.
+ * Needs PHP 5.1.
  */
 class Khamel extends RootNode
 {
@@ -527,7 +505,7 @@ class Khamel extends RootNode
 	protected $file;
 
 	/**
-	 * Ob solche HTML-Elemente inhaltsleer sind.
+	 * Whether such HTML elements are empty.
 	 * @param string $tag
 	 * @return bool
 	 */
@@ -537,7 +515,7 @@ class Khamel extends RootNode
 		return in_array($tag, $empty_elements);
 	}
 	/**
-	 * Ob solche HTML-Elemente inline sind.
+	 * Whether such HTML elemtents are inline.
 	 * @param string $tag
 	 * @return bool
 	 */
@@ -574,20 +552,20 @@ class Khamel extends RootNode
 	 * Returns an instance of the requested helper class.
 	 * @param string $name
 	 */
-	public static function create_helper($name)
+	public static function create_helper($name, KhamelQueue $q, $output_indent, $input_indent)
 	{
 		switch ($name)
 		{
 			case 'cache':
 			case 'include':
 			case 'pre':
-			case 'script':
-			case 'style':
+			case 'javascript':
+			case 'css':
 				$classname = ucfirst($name) . 'Helper';
-				return new $classname();
+				return new $classname($q, $output_indent, $input_indent);
 		}
 
-		if (isset(self::$custom[$name]))
+		if (isset(self::$custom) && isset(self::$custom[$name]))
 		{
 			return self::$custom[$name];
 		}
@@ -603,9 +581,7 @@ class Khamel extends RootNode
 	public function __construct($filename)
 	{
 		$this->file = self::$template_path . "/$filename.haml";
-		$arr = file($this->file, FILE_IGNORE_NEW_LINES);
-		$queue = new KhamelQueue($arr);
-		parent::__construct($queue, -1);
+		parent::__construct(new KhamelQueue($this->file), -1);
 	}
 
 	public function __toString()
@@ -625,5 +601,11 @@ class Khamel extends RootNode
 		return $ausgabe;
 	}
 }
+
+Khamel::$template_path = '.';
+Khamel::$cache_path = '/tmp';
+
+$khamel = new Khamel('moo');
+echo $khamel;
 
 ?>
