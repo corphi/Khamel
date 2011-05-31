@@ -1,7 +1,7 @@
 <?php
 
 /**
- *
+ * TODO: Will allow caching of snippets that contain dynamic contents. Someday.
  */
 class CacheHelper extends AbstractNode
 {
@@ -13,7 +13,7 @@ class CacheHelper extends AbstractNode
 
 	public function __toString()
 	{
-		return parent::stringify_children();
+		return $this->stringify_children();
 	}
 }
 
@@ -36,36 +36,11 @@ class IncludeHelper extends RootNode
  * Wraps content into a <pre> element and indents it properly (i.e. does not indent it).
  * TODO: Allow attributes on <pre> tag.
  */
-class PreHelper extends AbstractNode
+class PreHelper extends RootNode
 {
-	/**
-	 * What will be the output.
-	 * @var string
-	 */
-	protected $output = Khamel::NEWLINE;
-
-	/**
-	 * Constructor; creates a new helper for <pre> elements.
-	 * @param KhamelQueue $q
-	 * @param int $output_indent
-	 * @param int $input_indent
-	 */
-	public function __construct(KhamelQueue $q, $output_indent, $input_indent)
-	{
-		parent::__construct($output_indent);
-
-		$q->move_next();
-		while ($q->get_indent() >= $min_input_indent)
-		{
-			$this->output .= $q->get_line() . Khamel::NEWLINE;
-
-			$q->move_next();
-		}
-	}
-
 	public function __toString()
 	{
-		return '<pre>' . $this->output . '</pre>';
+		return '<pre>' . parent::__toString() . '</pre>';
 	}
 }
 

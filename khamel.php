@@ -365,18 +365,18 @@ class HtmlNode extends AbstractNode
 /**
  * A PHP node.
  */
-class PhpNode extends AbstractNode
+class PhpNode extends IntelligentNode
 {
 	/**
 	 * Constructor; creates a new PHP node.
 	 * @param KhamelQueue $q
 	 * @param int $output_indent
 	 */
-	public function __construct(KhamelQueue $q, $output_indent)
+	public function __construct(KhamelQueue $q, $output_indent, $min_input_indent)
 	{
-		parent::__construct($output_indent);
-
 		$line = $q->get_line();
+		parent::__construct($q, $output_indent, $q->get_indent() + 1);
+
 
 /*		switch (substr($line, 0, strpos($zeile, array(' ', '('))))
 		{
@@ -393,8 +393,6 @@ class PhpNode extends AbstractNode
 			default:
 				$line .= ';'; // FIXME: Same thing.
 		}*/
-
-		$this->parse_children($q, $output_indent, $q->get_indent() + 1);
 
 		$line = ltrim(substr($line, 1));
 
@@ -424,23 +422,22 @@ class PhpNode extends AbstractNode
 /**
  * A comment. TODO: Can do conditional ones too,
  */
-class CommentNode extends AbstractNode
+class CommentNode extends IntelligentNode
 {
 	/**
-	 * Constructor;
+	 * Constructor; creates a new comment node. Does parse its children.
 	 * @param KhamelQueue $q
 	 * @param int $output_indent
 	 * @param int $input_indent
 	 */
 	public function __construct(KhamelQueue $q, $output_indent, $input_indent)
 	{
-		parent::__construct($output_indent);
-
-		$this->parse_children($q, $output_indent, $q->get_indent() + 1);
+		parent::__construct($q, $output_indent, $q->get_indent() + 1);
 	}
 
 	public function __toString()
 	{
+		// TODO: Indent correctly.
 		return '<!-- -->';
 	}
 }
@@ -468,9 +465,33 @@ class DoctypeNode extends AbstractNode
 }
 
 /**
+ * A node that parses its children.
+ * Opposite of DumbNode which does not parse.
+ */
+class IntelligentNode extends AbstractNode
+{
+	/**
+	 * Creates a new node that will only output its children.
+	 * @param KhamelQueue $q
+	 * @param int $output_indent
+	 */
+	public function __construct(KhamelQueue $q, $output_indent, $min_input_indent)
+	{
+		parent::__construct($output_indent);
+
+		$this->parse_children($q, $output_indent, $min_input_indent);
+	}
+
+	public function __toString()
+	{
+		return $this->stringify_children();
+	}
+}
+
+/**
  * A node with an input indent of 0.
  */
-class RootNode extends AbstractNode
+class RootNode extends IntelligentNode
 {
 	/**
 	 * Creates a new node that will only output its children.
@@ -479,14 +500,7 @@ class RootNode extends AbstractNode
 	 */
 	public function __construct(KhamelQueue $q, $output_indent)
 	{
-		parent::__construct($output_indent);
-
-		$this->parse_children($q, $output_indent, 0);
-	}
-
-	public function __toString()
-	{
-		return $this->stringify_children();
+		parent::__construct($q, $output_indent, 0);
 	}
 }
 
@@ -589,7 +603,7 @@ class Khamel extends RootNode
 		$filename = self::$cache_path . '/' . substr(md5($this->file . filemtime($this->file)), 0, 10) . '.php';
 		if (!file_put_contents($filename, parent::__toString()))
 		{
-			return 'Buffering failed.';
+			return 'Khamel::__toString(): Buffering failed.';
 		}
 
 		// TODO: Import variables
