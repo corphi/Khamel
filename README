@@ -1,3 +1,5 @@
 Khamel - Something like a HAML parser in PHP
 
 For the moment, see the example usage at the bottom of khamel.php.
+
+Khamel indents using single spaces. If you want it to default to double spaces, modify Khamel::spaces() to double its parameter. The root element’s direct children (usually <head>, <body>) won’t get indented, because the root element’s output indent is -1. The static variable Khamel::$root_indent controls this feature.

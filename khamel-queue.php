@@ -87,5 +87,3 @@ class KhamelQueue
 		return $this;
 	}
 }
-
-?>

@@ -107,5 +107,3 @@ class CssHelper extends DumbNode
 		return '<style type="text/css">' . Khamel::NEWLINE . '/* <![CDATA[ */' . $this->output . '/* ]]> */' . Khamel::NEWLINE . Khamel::spaces($this->output_indent) . '</style>';
 	}
 }
-
-?>

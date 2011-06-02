@@ -5,7 +5,7 @@ include 'khamel-helpers.php';
 
 
 /**
- * Wraps a string into a data URI.,
+ * Wraps a string into a data URI.
  * @param string $string
  * @param string $type
  */
@@ -74,6 +74,11 @@ abstract class AbstractNode
 				break;
 			}
 
+			if (!isset($line[0]))
+			{
+				$line = '\\'; // Fake escaping… nothing.
+			}
+
 			switch ($line[0])
 			{
 				case '-':
@@ -108,19 +113,20 @@ abstract class AbstractNode
 	 */
 	protected function has_only_inline_children()
 	{
-		$children_inline = true;
 		if (isset($this->children))
 		{
+			$is_after_text_node = false;
 			foreach ($this->children as $child)
 			{
-				$children_inline = $child->is_inline;
-				if (!$children_inline)
+				if (!$child->is_inline || ($is_after_text_node && $child instanceof TextNode))
 				{
-					break;
+					return false;
 				}
+
+				$is_after_text_node = $child instanceof TextNode;
 			}
 		}
-		return $children_inline;
+		return true;
 	}
 
 	/**
@@ -136,12 +142,13 @@ abstract class AbstractNode
 			return $output;
 		}
 
-		$previous_inline = $this->has_only_inline_children(); // Only insert a line break at the beginning if it also has block children
+		$is_after_inline_node = $this->has_only_inline_children(); // Only insert a line break at the beginning if it also has block children
+		$is_after_text_node = false;
 		$indent = Khamel::spaces($this->output_indent + 1);
 		$child = reset($this->children);
 		do
 		{
-			if ($child->is_inline && $previous_inline) // Directly concatenate inline elements
+			if ($child->is_inline && $is_after_inline_node && !($child instanceof TextNode && $is_after_text_node)) // Directly concatenate inline elements
 			{
 				$output .= $child;
 			}
@@ -149,7 +156,9 @@ abstract class AbstractNode
 			{
 				$output .= Khamel::NEWLINE . $indent . $child;
 			}
-			$previous_inline = $child->is_inline;
+
+			$is_after_inline_node = $child->is_inline;
+			$is_after_text_node = $child instanceof TextNode;
 		}
 		while ($child = next($this->children));
 
@@ -512,11 +521,13 @@ class Khamel extends RootNode
 {
 	public static $template_path, $cache_path;
 
+	public static $root_indent = -1;
+
 	/**
 	 * Input filename.
 	 * @var string
 	 */
-	protected $file;
+	protected $filename;
 
 	/**
 	 * Whether the given HTML element is self-closing.
@@ -591,35 +602,47 @@ class Khamel extends RootNode
 	/**
 	 * Constructor; creates a new Khamel object by parsing a file.
 	 * @param string $filename
+	 * @param mixed $subject
 	 */
-	public function __construct($filename)
+	public function __construct($filename, $subject = null)
 	{
-		$this->file = self::$template_path . "/$filename.haml";
-		parent::__construct(new KhamelQueue($this->file), -1);
+		if (!isset(self::$template_path))
+		{
+			throw new Exception('Khamel::__construct(): Khamel::$template_path must be set.');
+		}
+		if (!isset(self::$cache_path))
+		{
+			throw new Exception('Khamel::__construct(): Khamel::$cache_patch must be set.');
+		}
+
+		$this->filename = self::$template_path . "/$filename.haml";
+		parent::__construct(new KhamelQueue($this->filename), self::$root_indent);
+
+		$this->subject = $subject;
 	}
 
 	public function __toString()
 	{
-		$filename = self::$cache_path . '/' . substr(md5($this->file . filemtime($this->file)), 0, 10) . '.php';
-		if (!file_put_contents($filename, parent::__toString()))
+		$tmp_filename = self::$cache_path . '/' . substr(md5($this->filename . filemtime($this->filename)), 0, 10) . '.php';
+		if (!file_put_contents($tmp_filename, parent::__toString()))
 		{
 			return 'Khamel::__toString(): Buffering failed.';
 		}
 
 		// TODO: Import variables
 		ob_start(null);
-		include $filename;
-		$ausgabe = ob_get_contents();
+		include $tmp_filename;
+		$output = ob_get_contents();
 		ob_end_clean();
 
-		return $ausgabe;
+		return $output;
 	}
 }
+
+echo '<?xml version="1.0" encoding="UTF-8" ?>';
 
 Khamel::$template_path = '.';
 Khamel::$cache_path = '/tmp';
 
 $khamel = new Khamel('moo');
 echo $khamel;
-
-?>
