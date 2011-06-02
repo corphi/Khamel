@@ -1,18 +1,17 @@
-- echo '<?xml version="1.0" encoding="UTF-8" ?>';
 !!! 1.1
 %html(xmlns="http://www.w3.org/1999/xhtml/")
  %head
-  %meta(http-equiv="Content-Type" value="application/xhtml+xml; charset=UTF-8")
+  %meta(http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8")
   %title
-   Ein bescheidener Test
+   Humbly testing
   :css
    body { font: 16px Calibri; }
-   a { color: red; }
-   .hinweis { background: yellow; padding: 0.5em; border: 1px solid #ffd700; }
+   a { color: blue; }
+   .notice { background: yellow; padding: 0.5em; border: 1px solid red; }
  %body
   #header
    %h1
     %a(href="#")
      Test
-  %p.hinweis
-   Auch wenn ich das schon wusste.
+  %p.notice
+   Even though I already knew that.
