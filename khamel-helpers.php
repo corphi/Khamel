@@ -80,8 +80,8 @@ class JavascriptHelper extends DumbNode
 			return '';
 		}
 		return '<script type="text/javascript">' . Khamel::NEWLINE
-			. '// <![CDATA[' . $this->output . '// ]]>' . Khamel::NEWLINE .
-			Khamel::spaces($this->output_indent) . '</script>';
+			. '// <![CDATA[' . $this->output . '// ]]>' . Khamel::NEWLINE
+			. Khamel::spaces($this->output_indent) . '</script>';
 	}
 }
 
@@ -98,7 +98,7 @@ class CssHelper extends DumbNode
 			return '';
 		}
 		return '<style type="text/css">' . Khamel::NEWLINE
-			. '/* <![CDATA[ */' . $this->output . '/* ]]> */' . Khamel::NEWLINE .
-			Khamel::spaces($this->output_indent) . '</style>';
+			. '/* <![CDATA[ */' . $this->output . '/* ]]> */' . Khamel::NEWLINE
+			. Khamel::spaces($this->output_indent) . '</style>';
 	}
 }
