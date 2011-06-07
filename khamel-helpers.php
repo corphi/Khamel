@@ -3,18 +3,8 @@
 /**
  * TODO: Will allow caching of snippets that contain dynamic contents. Someday.
  */
-class CacheHelper extends AbstractNode
+class CacheHelper extends IntelligentNode
 {
-	public function __construct(KhamelQueue $q, $output_indent, $min_input_indent)
-	{
-		parent::__construct($output_indent);
-		$this->parse_children($q, $output_indent, $min_input_indent);
-	}
-
-	public function __toString()
-	{
-		return $this->stringify_children();
-	}
 }
 
 /**
@@ -36,7 +26,7 @@ class IncludeHelper extends RootNode
  * Wraps content into a <pre> element and indents it properly (i.e. does not indent it).
  * TODO: Allow attributes on <pre> tag.
  */
-class PreHelper extends RootNode
+class PreHelper extends IntelligentNode
 {
 	public function __toString()
 	{
@@ -65,6 +55,7 @@ abstract class DumbNode extends AbstractNode
 	public function __construct(KhamelQueue $q, $output_indent, $min_input_indent)
 	{
 		parent::__construct($output_indent);
+		$this->is_inline = false;
 
 		$q->move_next();
 		while ($q->get_indent() >= $min_input_indent)
@@ -88,7 +79,9 @@ class JavascriptHelper extends DumbNode
 		{
 			return '';
 		}
-		return '<script type="text/javascript">' . Khamel::NEWLINE . '// <![CDATA[' . $this->output . '// ]]>' . Khamel::NEWLINE . Khamel::spaces($this->output_indent) . '</script>';
+		return '<script type="text/javascript">' . Khamel::NEWLINE
+			. '// <![CDATA[' . $this->output . '// ]]>' . Khamel::NEWLINE .
+			Khamel::spaces($this->output_indent) . '</script>';
 	}
 }
 
@@ -104,6 +97,8 @@ class CssHelper extends DumbNode
 		{
 			return '';
 		}
-		return '<style type="text/css">' . Khamel::NEWLINE . '/* <![CDATA[ */' . $this->output . '/* ]]> */' . Khamel::NEWLINE . Khamel::spaces($this->output_indent) . '</style>';
+		return '<style type="text/css">' . Khamel::NEWLINE
+			. '/* <![CDATA[ */' . $this->output . '/* ]]> */' . Khamel::NEWLINE .
+			Khamel::spaces($this->output_indent) . '</style>';
 	}
 }
