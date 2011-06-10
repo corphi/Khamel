@@ -1,23 +1,35 @@
 !!! 1.1
-%html(xmlns="http://www.w3.org/1999/xhtml/")
+%html(xmlns="http://www.w3.org/1999/xhtml/"    )
  %head
   %meta(http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8")
   %title
    Humbly testing
   :css
    
-   body { font-family: "DejaVu Serif Condensed", Serif; font-size: 16px; }
+   body { font-family: "DejaVu Sans", Serif; font-size: 16px; }
+   h1 { font-family: "DejaVu Serif Condensed" }
    a { color: blue; }
    .notice { background: yellow; padding: 0.5em; border: 1px solid red; }
    
  %body
   
   #header
-   %h1
-    %a(href="#")
-     Test
+   %h1#only_a_test
+    This is only a test
   
   %p.notice
-   Even though I already knew that.
+   Even though I already knew 
+   %a(href="#only_a_test")
+    that
+   \.
+   %br
+   
    But I still want to test multilining.
   
+  %h2 What about global variables?
+  %table.properties
+   -foreach ($_GET as $k => $v):
+    %tr
+     %th =$k
+     $td =$v
+   -endforeach;
