@@ -152,7 +152,7 @@ abstract class AbstractNode
 			{
 				$output .= $child;
 			}
-			else // Insert a line break before, after and between blocks
+			else // Insert a line break before, after and between blocks and between TextNodes
 			{
 				$output .= Khamel::NEWLINE . $indent . $child;
 			}
@@ -169,7 +169,7 @@ abstract class AbstractNode
 }
 
 /**
- * Simple text node. TODO: Can do evaluations as well.
+ * Simple text node.
  */
 class TextNode extends AbstractNode
 {
@@ -177,7 +177,7 @@ class TextNode extends AbstractNode
 	 * Output text.
 	 * @var string
 	 */
-	protected $string;
+	protected $output;
 
 	/**
 	 * Constructor; parses a text node from the queue.
@@ -188,7 +188,7 @@ class TextNode extends AbstractNode
 	{
 		parent::__construct($output_indent);
 
-		$this->string = $q->get_line();
+		$this->output = $q->get_line();
 		$q->move_next();
 
 		$this->is_inline = true;
@@ -196,12 +196,18 @@ class TextNode extends AbstractNode
 
 	public function __toString()
 	{
-		if (gettype($this->string) != 'string')
+		if (isset($this->output[0]))
 		{
-			return print_r($this->string, 1) . ':' . $this->string;
+			if ($this->output[0] == '=')
+			{
+				return '<?php echo htmlspecialchars(' . ltrim(substr($this->string, 1)) . '); ?>';
+			}
+			if ($this->output[0] == '\\')
+			{
+				return substr($this->output, 1);
+			}
 		}
-		return $this->string;
-		'<?php echo htmlspecialchars(' . ltrim(substr($this->string, 1)) . '); ?>';
+		return $this->output;
 	}
 }
 
@@ -262,16 +268,15 @@ class HtmlNode extends AbstractNode
 		$line = substr($line, strlen($matches[0]));
 		unset($matches);
 
-		// TODO: Object reference
+		// TODO: Object reference; how does it actually work?
 
 		while (isset($line[0]) && ($line[0] == '(' || $line[0] == '{')) // Attributes
 		{
 			if ($line[0] == '(') // HTML-style attributes
 			{
-//				echo "$line ­: found HTML-style attributes" . Khamel::NEWLINE;
 				$line = substr($line, 1);
 
-				while (preg_match('@([^=]+)=(".*?"|[^"].*?)(?: |\))@', $line, $match))
+				while (preg_match('@([^=]+)=(".*?"|[^"].*?) *\)?@', $line, $match))
 				{
 					if ($match[1] == 'class' || $match[1] == 'id')
 					{
@@ -282,14 +287,14 @@ class HtmlNode extends AbstractNode
 					{
 						$attr[$match[1]] = $match[2];
 					}
-					$line = ltrim(substr($line, strlen($match[0])));
+					$line = substr($line, strlen($match[0]));
 
-					if (substr($match[2], -1) == ')')
+					if (substr($match[0], -1) == ')')
 					{
 						break;
 					}
 				}
-				continue;
+				continue; // searching for attribute hashes
 			}
 
 			// Ruby-style attributes
@@ -299,9 +304,11 @@ class HtmlNode extends AbstractNode
 			}
 		}
 
+		$line = ltrim($line);
 
 		if (isset($matches[5]) && $matches[5]) // First child
 		{
+			echo $line, ': found first child.';
 			$qq = new KhamelQueue(data_uri_from_string($matches[5]));
 			$this->children[] = new TextNode($qq->move_next(), $output_indent + 1);
 		}
@@ -631,7 +638,10 @@ class Khamel extends RootNode
 	public function __toString()
 	{
 		$tmp_filename = self::$cache_path . '/' . substr(md5($this->filename . filemtime($this->filename)), 0, 10) . '.php';
-		if (!file_put_contents($tmp_filename, parent::__toString()))
+		if (!file_exists($tmp_filename)
+			// FIXME: Remove the hack to strip the newline at the beginning. It is there because all nodes are child nodes by default.
+			// This is only a symptom, the cure needs to be applied in AbstractNode::stringify_children().
+			&& !file_put_contents($tmp_filename, substr(parent::__toString(), strlen(self::NEWLINE))))
 		{
 			return 'Khamel::__toString(): Buffering failed.';
 		}
@@ -646,7 +656,7 @@ class Khamel extends RootNode
 	}
 }
 
-echo '<?xml version="1.0" encoding="UTF-8" ?>';
+echo '<?xml version="1.0" encoding="UTF-8" ?>', Khamel::NEWLINE;
 
 Khamel::$template_path = '.';
 Khamel::$cache_path = '/tmp';
