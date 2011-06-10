@@ -7,7 +7,7 @@
   :css
    
    body { font-family: "DejaVu Sans", Serif; font-size: 16px; }
-   h1 { font-family: "DejaVu Serif Condensed" }
+   h1 { font-family: "DejaVu Serif Condensed"; }
    a { color: blue; }
    .notice { background: yellow; padding: 0.5em; border: 1px solid red; }
    
@@ -31,5 +31,5 @@
    -foreach ($_GET as $k => $v):
     %tr
      %th =$k
-     $td =$v
+     %td =$v
    -endforeach;
