@@ -4,17 +4,6 @@ include 'khamel-queue.php';
 include 'khamel-helpers.php';
 
 
-/**
- * Wraps a string into a data URI.
- * @param string $string
- * @param string $type
- */
-function data_uri_from_string($string, $type = 'text/plain')
-{
-	return 'data:' . $type . ',' . urlencode($string);
-}
-
-
 class PhpCompiler
 {
 	public static function execute($code)
@@ -80,7 +69,7 @@ abstract class AbstractNode
 			}
 
 			switch ($line[0])
-			{ // TODO: still missing ~, !, \
+			{ // TODO: still missing ~, !
 				case '-':
 					$this->children[] = new PhpNode($q, $output_indent);
 					break;
@@ -169,7 +158,8 @@ abstract class AbstractNode
 }
 
 /**
- * Simple text node.
+ * Simple text node. Also does evaluations and unescaping.
+ * May not have children; effectively delegates parsing them to its parent node.
  */
 class TextNode extends AbstractNode
 {
@@ -181,10 +171,11 @@ class TextNode extends AbstractNode
 
 	/**
 	 * Constructor; parses a text node from the queue.
-	 * @param KhamelQueue $q
+	 * Also allows passing a SimpleQueue.
+	 * @param SimpleQueue $q
 	 * @param int $output_indent
 	 */
-	public function __construct(KhamelQueue $q, $output_indent)
+	public function __construct(SimpleQueue $q, $output_indent)
 	{
 		parent::__construct($output_indent);
 
@@ -214,7 +205,7 @@ class TextNode extends AbstractNode
 /**
  * An XHTML node.
  */
-class HtmlNode extends AbstractNode
+class HtmlNode extends IntelligentNode
 {
 	/**
 	 * Whether this element is self-closing.
@@ -229,8 +220,6 @@ class HtmlNode extends AbstractNode
 	 */
 	public function __construct(KhamelQueue $q, $output_indent)
 	{
-		parent::__construct($output_indent);
-
 		$line = $q->get_line();
 		if (!preg_match('@^(\%[^() =#.]+)?([#.][^() =]*)?@', $line, $matches))
 		{
@@ -276,7 +265,7 @@ class HtmlNode extends AbstractNode
 			{
 				$line = substr($line, 1);
 
-				while (preg_match('@([^=]+)=(".*?"|[^"].*?) *\)?@', $line, $match))
+				while (preg_match('@([^=]+)=(".*?"|[^"].*?)\s*\)?@', $line, $match)) // FIXME: Add support for shorthand attributes
 				{
 					if ($match[1] == 'class' || $match[1] == 'id')
 					{
@@ -298,19 +287,25 @@ class HtmlNode extends AbstractNode
 			}
 
 			// Ruby-style attributes
-			while (preg_match('@(?:""|\'\'|:)\s*=>\s*()@', $line, $match))
+			while (preg_match('@(?:".+?"|\'.+?\'|:.+?)\s*(=>)\s*(.*?),@', $line, $match))
 			{
-
+				if ($match[2] == '=>') // Attribute
+				{
+					
+				}
+				else // Function call
+				{
+					
+				}
 			}
 		}
 
 		$line = ltrim($line);
 
-		if (isset($matches[5]) && $matches[5]) // First child
+		if (isset($line[0])) // First child
 		{
-			echo $line, ': found first child.';
-			$qq = new KhamelQueue(data_uri_from_string($matches[5]));
-			$this->children[] = new TextNode($qq->move_next(), $output_indent + 1);
+			// Wrap the child (which will be a text node) into a SimpleQueue and add it before all other children.
+			$this->children[] = new TextNode(new SimpleQueue($line), $output_indent + 1);
 		}
 
 		if (isset($id)) // Merge identifier
@@ -335,7 +330,8 @@ class HtmlNode extends AbstractNode
 			$attr['class'] = '"' . implode(' ', $attr['class']) . '"';
 		}
 
-		$this->parse_children($q, $output_indent + 1, $q->get_indent() + 1);
+		parent::__construct($q, $output_indent + 1, $q->get_indent() + 1);
+
 		$this->is_inline = Khamel::is_inline_element($tag);
 
 		// Concatenate attributes
@@ -361,7 +357,7 @@ class HtmlNode extends AbstractNode
 		unset($this->tag);
 
 		$output = "<$tag";
-		preg_match('@^[^ ]+@', $tag, $matches);
+		preg_match('@^\S+@', $tag, $matches);
 		$tag = $matches[0];
 
 		if (Khamel::is_empty_element($tag))
@@ -416,22 +412,22 @@ class PhpNode extends IntelligentNode
 		{
 			// Don’t output anything.
 			$this->children = array();
-			$this->code = '';
+			$this->output = '';
 			return;
 		}
 
-		$this->code = "<?php $line ?>";
+		$this->output = "<?php $line ?>";
 	}
 
 	/**
 	 * The output.
 	 * @var string
 	 */
-	private $code;
+	private $output;
 
 	public function __toString()
 	{
-		return $this->code;
+		return $this->output;
 	}
 }
 
@@ -446,9 +442,9 @@ class CommentNode extends IntelligentNode
 	 * @param int $output_indent
 	 * @param int $input_indent
 	 */
-	public function __construct(KhamelQueue $q, $output_indent, $input_indent)
+	public function __construct(KhamelQueue $q, $output_indent, $min_input_indent)
 	{
-		parent::__construct($q, $output_indent, $q->get_indent() + 1);
+		parent::__construct($q, $output_indent, $min_input_indent);
 	}
 
 	public function __toString()
@@ -494,7 +490,7 @@ class DoctypeNode extends AbstractNode
 class IntelligentNode extends AbstractNode
 {
 	/**
-	 * Creates a new node that will only output its children.
+	 * Creates a new node that will at least output its children.
 	 * @param KhamelQueue $q
 	 * @param int $output_indent
 	 */
