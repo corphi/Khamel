@@ -546,7 +546,7 @@ class Khamel extends RootNode
 	 */
 	public static function is_empty_element($tag)
 	{
-		static $empty_elements = array('area', 'base', 'br', 'col', 'hr', 'img', 'input', 'link', 'meta', 'param');
+		static $empty_elements = array('area', 'base', 'br', 'col', 'hr', 'img', 'input', 'link', 'meta', 'param', 'wbr');
 		return in_array($tag, $empty_elements);
 	}
 	/**
@@ -556,7 +556,7 @@ class Khamel extends RootNode
 	 */
 	public static function is_inline_element($tag)
 	{
-		static $inline_elements = array('a', 'abbr', 'acronym', 'bdo', 'big', 'button', 'br', 'cite', 'del', 'dfn', 'em',  'img', 'input', 'ins', 'kbd', 'label', 'param', 'q', 'samp', 'small', 'span', 'strong', 'sub', 'sup', 'var');
+		static $inline_elements = array('a', 'abbr', 'acronym', 'b', 'bdi', 'bdo', 'big', 'button', 'br', 'cite', 'code', 'del', 'dfn', 'em', 'i', 'img', 'input', 'ins', 'kbd', 'label', 'mark', 'param', 'q', 'rb', 'rp', 'rt', 'ruby', 's', 'samp', 'small', 'span', 'strong', 'sub', 'sup', 'time', 'u', 'var', 'wbr');
 		return in_array($tag, $inline_elements);
 	}
 
