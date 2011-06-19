@@ -1,0 +1,43 @@
+h1. Khamel -- Something like a HAML parser in PHP
+
+For the moment, see the example usage at the bottom of @khamel.php@.
+
+h2. Differences between HAML and Khamel
+
+The biggest difference is that Khamel uses PHP syntax instead of Ruby syntax. In some places (esp. attribute hashes) the Ruby syntax will be translated to native PHP by the Khamel parser. A collection of the "most important incompatibilites":#miscdiff is listed below.
+
+h3. API conformance
+
+Nearly none. I didn’t really care because it would require even more emulation of Ruby features. You basically give it a file name (without extension) and Khamel will do the rest.
+
+h3(#indenting). Indenting
+
+Khamel indents using single spaces. If you want it to use double spaces, modify @Khamel::spaces()@ to double its parameter. The root element’s direct children (usually @<head>@, @<body>@) won’t get indented, because the root element’s output indent is -1. The static variable @Khamel::$root_indent@ controls this feature.
+Blocks indent their children if at least one of them is a block itself. Khamel knows about inline tags, all other tags are considered block tags. To emulate default HAML behaviour, make @Khamel::is_inline_element()@ always return @false@.
+
+h3(#miscdiff). Misc. differences
+
+* Khamel uses whatever encoding you like. Just re-encode its file and make sure to announce it to the browser. But it defaults to UTF-8; and you should keep it as is.
+* Invocation usually requires an actual file. If you want to pass a string, wrap it into a data URI. @allow_url_fopen@ needs to be enabled.
+* Only a few Doctypes are supported. Output will always be XML compatible (HTML parsers usually don’t care about that). You have to worry about allowed tags, attributes etc. yourself to produce valid documents.
+* There is no @:ugly@ mode. Instead, whitespace is generated according to what "I like best":#indenting. But the files will be cached on first invocation; it won’t make too much of a difference afterwards.
+* Compiled PHP will be cached inside a temporary folder. If you change your templates often, it will probably become a mess.
+* The default attribute wrapper is a double quote (@"@). Cannot be changed.
+* Khamel internally handles tags that can (and will) be self-closed. These tags cannot have children; if they have, they will be parsed, but they will not have any influence on the output.
+* Variables starting with @ -- you guessed it -- produce suppressed PHP warnings. This will probably be changed.
+
+h2. Invoking it
+
+After including the main file @khamel.php@, you have to set two static variables:
+
+bc. Khamel::$template_path = './templates';
+Khamel::$cache_path = '/tmp'; // You need write access to this directory
+
+Afterwards, you can just use it like this:
+
+bc. $khamel = new Khamel('my_template'); // will parse ./templates/my_template.haml
+echo $khamel;
+
+Or, if you just want to output it and don’t care about the object that did all the work:
+
+bc. echo new Khamel('my_template');
