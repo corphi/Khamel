@@ -1,6 +1,20 @@
 h1. Khamel -- Something like a HAML parser in PHP
 
-For the moment, see the example usage at the bottom of @khamel.php@.
+h2. Invoking it
+
+After including the main file @khamel.php@, you have to set two static variables:
+
+bc. Khamel::$template_path = './templates';
+Khamel::$cache_path = '/tmp'; // You need write access to this directory
+
+Afterwards, you can just use it like this:
+
+bc. $khamel = new Khamel('my_template'); // will parse ./templates/my_template.haml
+echo $khamel;
+
+Or, if you just want to output it and don’t care about the object that did all the work:
+
+bc. echo new Khamel('my_template');
 
 h2. Differences between HAML and Khamel
 
@@ -32,19 +46,3 @@ echo $str;
 * The default attribute wrapper is a double quote (@"@). Cannot be changed.
 * Khamel internally handles tags that can (and will) be self-closed. These tags cannot have children; if they have, they will be parsed, but they will not have any influence on the output.
 * Variables starting with @ -- you guessed it -- produce suppressed PHP warnings. This will probably be changed.
-
-h2. Invoking it
-
-After including the main file @khamel.php@, you have to set two static variables:
-
-bc. Khamel::$template_path = './templates';
-Khamel::$cache_path = '/tmp'; // You need write access to this directory
-
-Afterwards, you can just use it like this:
-
-bc. $khamel = new Khamel('my_template'); // will parse ./templates/my_template.haml
-echo $khamel;
-
-Or, if you just want to output it and don’t care about the object that did all the work:
-
-bc. echo new Khamel('my_template');
