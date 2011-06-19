@@ -191,7 +191,7 @@ class TextNode extends AbstractNode
 		{
 			if ($this->output[0] == '=')
 			{
-				return '<?php echo htmlspecialchars(' . ltrim(substr($this->string, 1)) . '); ?>';
+				return '<?php echo htmlspecialchars(' . ltrim(substr($this->output, 1)) . '); ?>';
 			}
 			if ($this->output[0] == '\\')
 			{
