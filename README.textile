@@ -12,12 +12,19 @@ Nearly none. I didn’t really care because it would require even more emulation
 
 h3(#indenting). Indenting
 
-Khamel indents using single spaces. If you want it to use double spaces, modify @Khamel::spaces()@ to double its parameter. The root element’s direct children (usually @<head>@, @<body>@) won’t get indented, because the root element’s output indent is -1. The static variable @Khamel::$root_indent@ controls this feature.
+Khamel indents using single spaces. If you want to use double spaces, modify @Khamel::spaces()@ to double its parameter. The root element’s direct children (usually @<head>@, @<body>@) won’t get indented, because the root element’s output indent is -1. The static variable @Khamel::$root_indent@ controls this feature.
 Blocks indent their children if at least one of them is a block itself. Khamel knows about inline tags, all other tags are considered block tags. To emulate default HAML behaviour, make @Khamel::is_inline_element()@ always return @false@.
 
 h3(#miscdiff). Misc. differences
 
-* Khamel uses whatever encoding you like. Just re-encode its file and make sure to announce it to the browser. But it defaults to UTF-8; and you should keep it as is.
+* PHP encoding support is mostly a pain. The Khamel files come encoded as UTF-8. You should keep it as is. If you really need to change the output encoding, use "ob_iconv_handler()":http://php.net/ob_iconv_handler. Remember to generate the string first and apply encoding afterwards:
+
+bc. $str = (string) new Khamel('moo');
+iconv_set_encoding('internal_encoding', 'UTF-8');
+iconv_set_encoding('output_encoding', 'ISO-8859-15');
+ob_start('ob_iconv_handler');
+echo $str;
+
 * Invocation usually requires an actual file. If you want to pass a string, wrap it into a data URI. @allow_url_fopen@ needs to be enabled.
 * Only a few Doctypes are supported. Output will always be XML compatible (HTML parsers usually don’t care about that). You have to worry about allowed tags, attributes etc. yourself to produce valid documents.
 * There is no @:ugly@ mode. Instead, whitespace is generated according to what "I like best":#indenting. But the files will be cached on first invocation; it won’t make too much of a difference afterwards.
