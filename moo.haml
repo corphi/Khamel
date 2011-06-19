@@ -28,8 +28,8 @@
   
   %h2 What about global variables?
   %table.properties
-   -foreach ($_GET as $k => $v):
-    %tr
-     %th =$k
-     %td =$v
+   -foreach ($_SERVER as $k => $v):
+   %tr
+    %th =$k
+    %td =$v
    -endforeach;
