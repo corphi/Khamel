@@ -21,7 +21,7 @@ class SimpleQueue
 		}
 		if (is_null($this->indent))
 		{
-			echo "KhamelQueue::get_line() with NULL indent\n"; // FIXME: Turn into an exception/remove
+			throw new Exception('SimpleQueue::get_line() with NULL indent. This should never happen. Report this bug at github.com/corphi/Khamel and include the file that you were processing.');
 		}
 		return Khamel::spaces($this->indent - $forced_input_indent) . $this->line;
 	}

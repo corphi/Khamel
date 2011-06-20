@@ -652,7 +652,7 @@ class Khamel extends RootNode
 	}
 }
 
-echo '<?xml version="1.0" encoding="UTF-8" ?>', Khamel::NEWLINE;
+echo '<?xml version="1.0" encoding="UTF-8"?>', Khamel::NEWLINE;
 
 Khamel::$template_path = '.';
 Khamel::$cache_path = '/tmp';
