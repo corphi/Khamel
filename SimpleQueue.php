@@ -1,9 +1,13 @@
 <?php
 
+namespace Khamel;
+
+
+
 /**
  * The queue
  * that doesn’t do
- * a thing.
+ 	* a thing.
  * It’s basically a wrapper for a single line string.
  */
 class SimpleQueue
@@ -13,14 +17,12 @@ class SimpleQueue
 	 * @param int $forced_input_indent
 	 * @return string
 	 */
-	public function get_line($forced_input_indent = NULL)
+	public function get_line($forced_input_indent = null)
 	{
-		if (is_null($forced_input_indent))
-		{
+		if (is_null($forced_input_indent)) {
 			return $this->line;
 		}
-		if (is_null($this->indent))
-		{
+		if (is_null($this->indent)) {
 			throw new Exception('SimpleQueue::get_line() with NULL indent. This should never happen. Report this bug at github.com/corphi/Khamel and include the file that you were processing.');
 		}
 		return Khamel::spaces($this->indent - $forced_input_indent) . $this->line;
@@ -46,7 +48,7 @@ class SimpleQueue
 	 */
 	public function is_valid()
 	{
-		return !is_null($this->line);
+		return $this->line !== null;
 	}
 
 
@@ -60,49 +62,8 @@ class SimpleQueue
 	 */
 	public function move_next()
 	{
-		$this->indent = NULL;
-		$this->line = NULL;
-
-		return $this;
-	}
-}
-
-/**
- * A queue of lines for processing with Khamel.
- * Somehow inspired by Java iterators.
- */
-class KhamelQueue extends SimpleQueue
-{
-	/**
-	 * The input file handle.
-	 * @var resource
-	 */
-	protected $handle;
-	/**
-	 * Constructor; creates a new queue by opening a file.
-	 * @param string $filename
-	 */
-	public function __construct($filename)
-	{
-		$this->handle = fopen($filename, 'r');
-	}
-
-
-	/**
-	 * Processes the next line.
-	 * @return KhamelQueue
-	 */
-	public function move_next()
-	{
-		$line = fgets($this->handle);
-		if ($line === false)
-		{
-			fclose($this->handle);
-			return parent::move_next();
-		}
-
-		$line = rtrim($line, "\r\n");
-		$this->indent = strlen($line) - strlen($this->line = ltrim($line));
+		$this->indent = null;
+		$this->line = null;
 
 		return $this;
 	}
