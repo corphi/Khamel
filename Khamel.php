@@ -75,7 +75,7 @@ class Khamel extends RootNode
 			case 'pre':
 			case 'javascript':
 			case 'css':
-				$classname = ucfirst($name) . 'Helper';
+				$classname = 'Khamel\\Helpers\\' . ucfirst($name) . 'Helper';
 				return new $classname($q, $output_indent, $input_indent);
 		}
 
@@ -84,6 +84,7 @@ class Khamel extends RootNode
 		}
 
 		// TODO: Process errors
+		$q->move_next();
 	}
 
 

@@ -3,6 +3,7 @@
 namespace Khamel\Helpers;
 
 use Khamel\RootNode;
+use Khamel\Khamel;
 
 
 

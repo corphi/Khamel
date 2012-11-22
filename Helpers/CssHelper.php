@@ -3,6 +3,7 @@
 namespace Khamel\Helpers;
 
 use Khamel\DumbNode;
+use Khamel\Khamel;
 
 
 
