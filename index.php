@@ -1,6 +1,8 @@
 <?php
 
-require_once 'khamel.php';
+require_once 'autoloader.php';
+
+use Khamel\Khamel;
 
 
 
