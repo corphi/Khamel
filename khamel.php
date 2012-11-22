@@ -651,11 +651,3 @@ class Khamel extends RootNode
 		return $output;
 	}
 }
-
-echo '<?xml version="1.0" encoding="UTF-8"?>', Khamel::NEWLINE;
-
-Khamel::$template_path = '.';
-Khamel::$cache_path = '/tmp';
-
-$khamel = new Khamel('moo');
-echo $khamel;
