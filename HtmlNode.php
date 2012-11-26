@@ -24,24 +24,25 @@ class HtmlNode extends IntelligentNode
 	{
 		$line = $q->get_line();
 		if (!preg_match('@^(\%[^() =#.]+)?([#.][^() =]*)?@', $line, $matches)) {
-			die('HtmlNode::__construct(): No node in <code>' . htmlspecialchars($line) . '</code>');
+			throw new \Exception('HtmlNode::__construct(): No node in <code>' . htmlspecialchars($line) . '</code>');
 		}
 
-		if (isset($matches[1]) && $matches[1]) { // Tag
+		// Tag
+		if (isset($matches[1]) && $matches[1]) {
 			$tag = substr($matches[1], 1);
 			unset($matches[1]);
 		} else {
 			$tag = 'div';
 		}
 
-		if (isset($matches[2]) && $matches[2]) // Identifier parts and/or CSS classes
-		{
+		// Identifier parts and/or CSS classes
+		if (isset($matches[2]) && $matches[2]) {
 			if (preg_match_all('@[#.][^#.]*@', $matches[2], $foo)) {
 				foreach ($foo[0] as $bar) { // Buffer them all
 					if ($bar[0] == '#') {
-						$id[] = substr($bar, 1);
+						$id[] = '"' . substr($bar, 1) . '"';
 					} else {
-						$class[] = substr($bar, 1);
+						$class[] = '"' . substr($bar, 1) . '"';
 					}
 				}
 			}
@@ -52,12 +53,14 @@ class HtmlNode extends IntelligentNode
 
 		// TODO: Object reference
 
-		while (isset($line[0]) && ($line[0] === '(' || $line[0] === '{')) { // Attributes
-			if ($line[0] === '(') { // HTML-style attributes
+		// Attributes
+		while (isset($line[0]) && ($line[0] === '(' || $line[0] === '{')) {
+			// HTML-style attributes
+			if ($line[0] === '(') {
 				$line = substr($line, 1);
 
 				while (preg_match('@([^=]+)=(".*?"|[^"].*?)\s*\)?@', $line, $match)) { // FIXME: Add support for shorthand attributes
-					if ($match[1] == 'class' || $match[1] == 'id') {
+					if ($match[1] === 'class' || $match[1] === 'id') {
 						// Append attribute value to list
 						${$match[1]}[] = $match[2];
 					} else {
@@ -65,7 +68,7 @@ class HtmlNode extends IntelligentNode
 					}
 					$line = substr($line, strlen($match[0]));
 
-					if (substr($match[0], -1) == ')') {
+					if (substr($match[0], -1) === ')') {
 						break;
 					}
 				}
@@ -74,7 +77,7 @@ class HtmlNode extends IntelligentNode
 
 			// Ruby-style attributes
 			while (preg_match('@(?:".+?"|\'.+?\'|:.+?)\s*(=>)\s*(.*?),@', $line, $match)) {
-				if ($match[2] == '=>') { // Attribute
+				if ($match[2] === '=>') { // Attribute
 					
 				} else { // Function call
 					
@@ -90,20 +93,20 @@ class HtmlNode extends IntelligentNode
 		}
 
 		if (isset($id)) { // Merge identifier
-			if (isset($attr['id'])) {
-				$attr['id'] = $id + $attr['id'];
+			if (function_exists('\\Shy\\array_flatten')) {
+				$id = \Shy\array_flatten($id);
 			}
+			$attr['id'] = implode('_', array_filter($id));
+			$attr['id'] = str_replace('"_"', '_', $attr['id']);
 			unset($id);
 		}
-		if (isset($attr['id'])) {
-			$attr['id'] = implode('_', array_filter(array_flatten($attr['id'])));
-		}
-		if (isset($class)) // Merge CSS classes
-		{
-			$attr['class'] = (isset($attr['class']) ? substr($attr['class'], 0, -1) . ' ' : '"') . implode(' ', $class) . '"';
+		if (isset($class)) { // Merge CSS classes
+			if (function_exists('\\Shy\\array_flatten')) {
+				$class = \Shy\array_flatten($class);
+			}
+			$attr['class'] = implode(' ', $class);
+			$attr['class'] = str_replace('" "', ' ', $attr['class']);
 			unset($class);
-		} elseif (isset($attr['class'])) {
-			$attr['class'] = '"' . implode(' ', $attr['class']) . '"';
 		}
 
 		parent::__construct($q, $output_indent + 1, $q->get_indent() + 1);
