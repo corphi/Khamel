@@ -12,8 +12,8 @@ class CommentNode extends IntelligentNode
 	/**
 	 * Constructor; creates a new comment node. Does parse its children.
 	 * @param KhamelQueue $q
-	 * @param int $output_indent
-	 * @param int $min_input_indent
+	 * @param integer $output_indent
+	 * @param integer $min_input_indent
 	 */
 	public function __construct(KhamelQueue $q, $output_indent, $min_input_indent)
 	{

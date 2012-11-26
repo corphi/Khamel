@@ -17,15 +17,30 @@ abstract class AbstractNode
 
 	/**
 	 * Output indent for this node.
-	 * @var int
+	 * @var integer
 	 */
 	protected $output_indent;
+
 	/**
-	 * Constructor; only saves the output indent (for use in __toString).
-	 * @param int $output_indent
+	 * @var KhamelQueue
 	 */
-	protected function __construct($output_indent)
+	protected $queue;
+
+	/**
+	 * @return KhamelQueue
+	 */
+	public function get_queue()
 	{
+		return $this->queue;
+	}
+
+	/**
+	 * @param KhamelQueue $q
+	 * @param integer $output_indent
+	 */
+	protected function __construct(KhamelQueue $q, $output_indent)
+	{
+		$this->queue = $q;
 		$this->output_indent = $output_indent;
 	}
 
@@ -38,8 +53,7 @@ abstract class AbstractNode
 	/**
 	 * Parses all child nodes an adds them to the list.
 	 * @param KhamelQueue $q
-	 * @param int $output_indent
-	 * @return void
+	 * @param integer $output_indent
 	 */
 	protected function parse_children(KhamelQueue $q, $output_indent, $min_input_indent)
 	{
@@ -56,7 +70,7 @@ abstract class AbstractNode
 			}
 
 			switch ($line[0])
-			{ // TODO: still missing ~, !, [
+			{ // TODO: still missing ~
 				case '-':
 					$this->children[] = new PhpNode($q, $output_indent);
 					break;
@@ -66,6 +80,9 @@ abstract class AbstractNode
 				case '%':
 				case '#':
 				case '.':
+				case '[':
+				case '(':
+				case '{':
 					$this->children[] = new HtmlNode($q, $output_indent);
 					break;
 				case ':':
@@ -89,13 +106,10 @@ abstract class AbstractNode
 	 */
 	protected function has_only_inline_children()
 	{
-		if (isset($this->children))
-		{
+		if (isset($this->children)) {
 			$is_after_text_node = false;
-			foreach ($this->children as $child)
-			{
-				if (!$child->is_inline || ($is_after_text_node && $child instanceof TextNode))
-				{
+			foreach ($this->children as $child) {
+				if (!$child->is_inline || ($is_after_text_node && $child instanceof TextNode)) {
 					return false;
 				}
 
@@ -113,8 +127,7 @@ abstract class AbstractNode
 	{
 		$output = '';
 
-		if (!$this->children)
-		{
+		if (!$this->children) {
 			return $output;
 		}
 
@@ -122,21 +135,20 @@ abstract class AbstractNode
 		$is_after_text_node = false;
 		$indent = Khamel::spaces($this->output_indent + 1);
 		$child = reset($this->children);
-		do
-		{
-			if ($child->is_inline && $is_after_inline_node && !($child instanceof TextNode && $is_after_text_node)) // Directly concatenate inline elements
-			{
+		do {
+			if ($child->is_inline && $is_after_inline_node
+				&& !($child instanceof TextNode && $is_after_text_node)
+			) {
+				// Directly concatenate inline elements
 				$output .= $child;
-			}
-			else // Insert a line break before, after and between blocks and between TextNodes
-			{
+			} else {
+				// Insert a line break before, after and between blocks and between TextNodes
 				$output .= Khamel::NEWLINE . $indent . $child;
 			}
 
 			$is_after_inline_node = $child->is_inline;
 			$is_after_text_node = $child instanceof TextNode;
-		}
-		while ($child = next($this->children));
+		} while ($child = next($this->children));
 
 		return $output;
 	}

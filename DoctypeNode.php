@@ -14,13 +14,13 @@ class DoctypeNode extends AbstractNode
 	/**
 	 * Constructor; creates a new doctype.
 	 * @param KhamelQueue $q
-	 * @param int $output_indent
+	 * @param integer $output_indent
 	 */
 	public function __construct(KhamelQueue $q, $output_indent)
 	{
-		parent::__construct($output_indent);
+		parent::__construct($q, $output_indent);
 
-		if ($q->get_line() == '!!! 1.1') {
+		if ($q->get_line() === '!!! 1.1') {
 			$this->output = ' PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd"';
 		}
 

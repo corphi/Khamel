@@ -24,7 +24,7 @@ class TextNode extends AbstractNode
 	 */
 	public function __construct(SimpleQueue $q, $output_indent)
 	{
-		parent::__construct($output_indent);
+		parent::__construct($q, $output_indent);
 
 		$this->output = $q->get_line();
 		$q->move_next();

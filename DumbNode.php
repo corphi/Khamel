@@ -18,12 +18,12 @@ abstract class DumbNode extends AbstractNode
 	/**
 	 * Constructor;
 	 * @param KhamelQueue $q
-	 * @param int $output_indent
-	 * @param int $min_input_indent
+	 * @param integer $output_indent
+	 * @param integer $min_input_indent
 	 */
 	public function __construct(KhamelQueue $q, $output_indent, $min_input_indent)
 	{
-		parent::__construct($output_indent);
+		parent::__construct($q, $output_indent);
 		$this->is_inline = false;
 
 		$q->move_next();

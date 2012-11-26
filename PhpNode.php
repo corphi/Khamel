@@ -12,7 +12,7 @@ class PhpNode extends IntelligentNode
 	/**
 	 * Constructor; creates a new PHP node.
 	 * @param KhamelQueue $q
-	 * @param int $output_indent
+	 * @param integer $output_indent
 	 */
 	public function __construct(KhamelQueue $q, $output_indent)
 	{

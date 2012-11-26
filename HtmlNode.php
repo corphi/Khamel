@@ -18,7 +18,7 @@ class HtmlNode extends IntelligentNode
 	/**
 	 * Constructor; parses an XHTML node from the queue.
 	 * @param KhamelQueue $q
-	 * @param int $output_indent
+	 * @param integer $output_indent
 	 */
 	public function __construct(KhamelQueue $q, $output_indent)
 	{
