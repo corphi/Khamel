@@ -41,6 +41,9 @@ class TextNode extends AbstractNode
 			if ($this->output[0] === '\\') {
 				return substr($this->output, 1);
 			}
+			if (substr($this->output, 0, 2) === '!=') {
+				return '<?php echo ' . ltrim(substr($this->output, 2)) . '; ?>';
+			}
 		}
 		return $this->output;
 	}
