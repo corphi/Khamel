@@ -35,7 +35,7 @@ class TextNode extends AbstractNode
 	public function __toString()
 	{
 		if (isset($this->output[0])) {
-			if ($this->output[0] === '=') {
+			if ($this->output[0] === '=' || substr($this->output, 0, 2) === '&=') {
 				return '<?php echo htmlspecialchars(' . ltrim(substr($this->output, 1)) . '); ?>';
 			}
 			if ($this->output[0] === '\\') {
