@@ -7,17 +7,26 @@ namespace Khamel;
 /**
  * Khamel parses a subset of the HAML commands and caches the result.
  * Needs PHP 5.1.
+ * 
+ * @author Philipp Cordes
+ * @license GNU General Public License, version 3
  */
 class Khamel extends RootNode
 {
+	/**
+	 * @var string
+	 */
 	public static $template_path, $cache_path;
 
+	/**
+	 * @var integer
+	 */
 	public static $root_indent = -1;
 
 	/**
 	 * Whether the given HTML element is self-closing.
 	 * @param string $tag
-	 * @return bool
+	 * @return boolean
 	 */
 	public static function is_empty_element($tag)
 	{
@@ -27,7 +36,7 @@ class Khamel extends RootNode
 	/**
 	 * Whether the given HTML element is inline.
 	 * @param string $tag
-	 * @return bool
+	 * @return boolean
 	 */
 	public static function is_inline_element($tag)
 	{
@@ -60,10 +69,14 @@ class Khamel extends RootNode
 
 	/**
 	 * Returns an instance of the requested helper class.
-	 * @param string $name
+	 * @param KhamelQueue $q
+	 * @param integer $output_indent
+	 * @param integer $input_indent
 	 */
-	public static function create_helper($name, KhamelQueue $q, $output_indent, $input_indent)
+	public static function create_helper(KhamelQueue $q, $output_indent, $input_indent)
 	{
+		$name = substr($q->get_line(), 1);
+		list($name) = explode(' ', $name);
 		switch ($name) {
 			case 'include':
 			case 'pre':
@@ -85,15 +98,14 @@ class Khamel extends RootNode
 	/**
 	 * Constructor; creates a new Khamel object by parsing a file.
 	 * @param string $filename
-	 * @param mixed $subject
 	 */
 	public function __construct($filename)
 	{
 		if (!isset(self::$template_path)) {
-			throw new Exception('Khamel::__construct(): Khamel::$template_path must be set.');
+			throw new \Exception('Khamel::__construct(): Khamel::$template_path must be set.');
 		}
 		if (!isset(self::$cache_path)) {
-			throw new Exception('Khamel::__construct(): Khamel::$cache_patch must be set.');
+			throw new \Exception('Khamel::__construct(): Khamel::$cache_patch must be set.');
 		}
 
 		$filename = self::$template_path . "/$filename.haml";
@@ -104,6 +116,7 @@ class Khamel extends RootNode
 	{
 		$tmp_filename = $this->get_queue()->get_filename();
 		$base_name = basename($tmp_filename, '.haml');
+
 		$tmp_filename = md5($tmp_filename . filemtime($tmp_filename), true);
 		$tmp_filename = substr(base64_encode($tmp_filename), 0, 8);
 		$tmp_filename = str_replace('/', '_', $tmp_filename); // base64 may contain slashes

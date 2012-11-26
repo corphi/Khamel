@@ -27,7 +27,7 @@ abstract class DumbNode extends AbstractNode
 		$this->is_inline = false;
 
 		$q->move_next();
-		while ($q->get_indent() >= $min_input_indent) {
+		while ($q->get_indent() > $min_input_indent) {
 			$this->output .= $q->get_line() . Khamel::NEWLINE;
 
 			$q->move_next();
