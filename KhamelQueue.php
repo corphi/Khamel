@@ -11,6 +11,18 @@ namespace Khamel;
 class KhamelQueue extends SimpleQueue
 {
 	/**
+	 * @var string
+	 */
+	protected $filename;
+	/**
+	 * @return string
+	 */
+	public function get_filename()
+	{
+		return $this->filename;
+	}
+
+	/**
 	 * The input file handle.
 	 * @var resource
 	 */
@@ -21,7 +33,7 @@ class KhamelQueue extends SimpleQueue
 	 */
 	public function __construct($filename)
 	{
-		$this->handle = fopen($filename, 'r');
+		$this->handle = fopen($this->filename = $filename, 'r');
 	}
 
 
