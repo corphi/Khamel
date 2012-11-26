@@ -15,12 +15,6 @@ class Khamel extends RootNode
 	public static $root_indent = -1;
 
 	/**
-	 * Input filename.
-	 * @var string
-	 */
-	protected $filename;
-
-	/**
 	 * Whether the given HTML element is self-closing.
 	 * @param string $tag
 	 * @return bool
@@ -76,7 +70,7 @@ class Khamel extends RootNode
 			case 'javascript':
 			case 'css':
 				$classname = 'Khamel\\Helpers\\' . ucfirst($name) . 'Helper';
-				return new $classname($q, $output_indent, $input_indent);
+				return new $classname($q, $output_indent, $input_indent + 1);
 		}
 
 		if (isset(self::$custom) && isset(self::$custom[$name])) {
@@ -102,8 +96,8 @@ class Khamel extends RootNode
 			throw new Exception('Khamel::__construct(): Khamel::$cache_patch must be set.');
 		}
 
-		$this->filename = self::$template_path . "/$filename.haml";
-		parent::__construct(new KhamelQueue($this->filename), self::$root_indent);
+		$filename = self::$template_path . "/$filename.haml";
+		parent::__construct(new KhamelQueue($filename), self::$root_indent);
 	}
 
 	public function __toString()
