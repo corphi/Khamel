@@ -50,7 +50,7 @@ class Khamel extends RootNode
 
 	/**
 	 * Generates the specified amount of spaces.
-	 * @param int $number
+	 * @param integer $number
 	 * @return string
 	 */
 	public static function spaces($number)
@@ -93,7 +93,7 @@ class Khamel extends RootNode
 	 * @param string $filename
 	 * @param mixed $subject
 	 */
-	public function __construct($filename, $subject = null)
+	public function __construct($filename)
 	{
 		if (!isset(self::$template_path)) {
 			throw new Exception('Khamel::__construct(): Khamel::$template_path must be set.');
@@ -104,19 +104,25 @@ class Khamel extends RootNode
 
 		$this->filename = self::$template_path . "/$filename.haml";
 		parent::__construct(new KhamelQueue($this->filename), self::$root_indent);
-
-		$this->subject = $subject;
 	}
 
 	public function __toString()
 	{
-		$tmp_filename = self::$cache_path . '/' . substr(md5($this->filename . filemtime($this->filename)), 0, 10) . '.php';
-		if (!file_exists($tmp_filename)
-			// FIXME: Remove the hack to strip the newline at the beginning. It is there because all nodes are child nodes by default.
-			// This is only a symptom, the cure needs to be applied in AbstractNode::stringify_children().
-			&& !file_put_contents($tmp_filename, substr(parent::__toString(), strlen(self::NEWLINE)))
-		) {
-			return 'Khamel::__toString(): Buffering failed.';
+		$tmp_filename = $this->get_queue()->get_filename();
+		$base_name = basename($tmp_filename, '.haml');
+		$tmp_filename = md5($tmp_filename . filemtime($tmp_filename), true);
+		$tmp_filename = substr(base64_encode($tmp_filename), 0, 8);
+		$tmp_filename = str_replace('/', '_', $tmp_filename); // base64 may contain slashes
+		$tmp_filename = self::$cache_path . "/$base_name-$tmp_filename.php";
+		unset($base_name);
+
+		if (true || !file_exists($tmp_filename)) {
+			// FIXME: Activate buffering
+			if (!file_put_contents($tmp_filename, substr(parent::__toString(), strlen(self::NEWLINE)))) {
+				// FIXME: Remove the hack to strip the newline at the beginning. It is there because all nodes are child nodes by default.
+				// This is only a symptom, the cure needs to be applied in AbstractNode::stringify_children().
+				return 'Khamel::__toString(): Buffering failed.';
+			}
 		}
 
 		// TODO: Import variables
@@ -125,6 +131,6 @@ class Khamel extends RootNode
 		$output = ob_get_contents();
 		ob_end_clean();
 
-		return $output;
+		return $output ?: $tmp_filename;
 	}
 }
