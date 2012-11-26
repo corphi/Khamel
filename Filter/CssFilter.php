@@ -1,6 +1,6 @@
 <?php
 
-namespace Khamel\Helpers;
+namespace Khamel\Filter;
 
 use Khamel\DumbNode;
 use Khamel\Khamel;
@@ -11,7 +11,7 @@ use Khamel\Khamel;
  * Wraps content into a <style> element and escapes properly.
  * TODO: Allow attributes on <style> tag.
  */
-class CssHelper extends DumbNode
+class CssFilter extends DumbNode
 {
 	public function __toString()
 	{

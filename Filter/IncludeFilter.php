@@ -1,6 +1,6 @@
 <?php
 
-namespace Khamel\Helpers;
+namespace Khamel\Filter;
 
 use Khamel\RootNode;
 use Khamel\Khamel;
@@ -11,7 +11,7 @@ use Khamel\KhamelQueue;
 /**
  * Includes a file at the current position.
  */
-class IncludeHelper extends RootNode
+class IncludeFilter extends RootNode
 {
 	/**
 	 * @param KhamelQueue $q

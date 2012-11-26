@@ -86,7 +86,7 @@ abstract class AbstractNode
 					$this->children[] = new HtmlNode($q, $output_indent);
 					break;
 				case ':':
-					$this->children[] = Khamel::create_helper($q, $output_indent, $min_input_indent);
+					$this->children[] = Khamel::create_filter($q, $output_indent, $min_input_indent);
 					break;
 				case '!':
 					if (substr($line, 0, 3) == '!!!')

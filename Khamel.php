@@ -68,21 +68,23 @@ class Khamel extends RootNode
 	}
 
 	/**
-	 * Returns an instance of the requested helper class.
+	 * Returns an instance of the requested filter class.
 	 * @param KhamelQueue $q
 	 * @param integer $output_indent
 	 * @param integer $input_indent
 	 */
-	public static function create_helper(KhamelQueue $q, $output_indent, $input_indent)
+	public static function create_filter(KhamelQueue $q, $output_indent, $input_indent)
 	{
 		$name = substr($q->get_line(), 1);
 		list($name) = explode(' ', $name);
 		switch ($name) {
-			case 'include':
-			case 'pre':
-			case 'javascript':
+			case 'cdata':
 			case 'css':
-				$classname = 'Khamel\\Helpers\\' . ucfirst($name) . 'Helper';
+			case 'include':
+			case 'javascript':
+			case 'plain':
+			case 'pre':
+				$classname = 'Khamel\\Filter\\' . ucfirst($name) . 'Filter';
 				return new $classname($q, $output_indent, $input_indent + 1);
 		}
 
