@@ -33,7 +33,11 @@ class KhamelQueue extends SimpleQueue
 	 */
 	public function __construct($filename)
 	{
-		$this->handle = fopen($this->filename = $filename, 'r');
+		$this->filename = $filename;
+		if (!is_readable($filename)) {
+			throw new \Exception("KhamelQueue::__construct(): Cannot read “$filename”.");
+		}
+		$this->handle = fopen($filename, 'r');
 	}
 
 
