@@ -26,7 +26,7 @@ Nearly none. I didn’t really care because it would require even more emulation
 
 h3(#indenting). Indenting
 
-Khamel indents using single spaces. If you want to use double spaces, modify @Khamel::spaces()@ to double its parameter. The root element’s direct children (usually @<head>@, @<body>@) won’t get indented, because the root element’s output indent is -1. The static variable @Khamel::$root_indent@ controls this feature.
+Khamel now indents using double spaces. The root element’s direct children (usually @<head>@, @<body>@) won’t get indented, because the root element’s output indent is -1. The static variable @Khamel::$root_indent@ controls this feature.
 Blocks indent their children if at least one of them is a block itself. Khamel knows about inline tags, all other tags are considered block tags. To emulate default HAML behaviour, make @Khamel::is_inline_element()@ always return @false@.
 
 h3(#miscdiff). Misc. differences

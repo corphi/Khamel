@@ -52,15 +52,15 @@ class Khamel extends RootNode
 ';
 
 	/**
-	 * Generates the specified amount of spaces.
+	 * Generates the specified amount of double spaces.
 	 * @param integer $number
 	 * @return string
 	 */
 	public static function spaces($number)
 	{
 		static $spacestring = '            ';
-		while ($number > strlen($spacestring))
-		{
+		$number <<= 2;
+		while ($number > strlen($spacestring)) {
 			$spacestring .= $spacestring;
 		}
 
