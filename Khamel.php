@@ -59,7 +59,7 @@ class Khamel extends RootNode
 	public static function spaces($number)
 	{
 		static $spacestring = '            ';
-		$number <<= 2;
+		$number <<= 1;
 		while ($number > strlen($spacestring)) {
 			$spacestring .= $spacestring;
 		}
